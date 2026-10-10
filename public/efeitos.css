@@ -1,0 +1,458 @@
+/* Efeitos animados em volta do Pokémon, conforme o tipo principal.
+   Estrutura (ver imagemComEfeito em comum.js):
+   .efeito > .aura (atrás) + 8 .particula + imagem + .frente (na frente, ex: água) */
+
+/* Painel escuro tingido com a cor do tipo, como no Sumário do PokeMMO */
+.palco {
+  background:
+    radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--cor-tipo) 45%, #1d2127) 0%,
+      color-mix(in srgb, var(--cor-tipo) 16%, #121417) 82%);
+  overflow: hidden;
+}
+
+/* Sprite em pixel art: aumenta sem borrar */
+.pixel {
+  image-rendering: pixelated;
+}
+
+.efeito {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  isolation: isolate;
+}
+
+.efeito > img,
+.efeito > .imagem-vazia {
+  position: relative;
+  z-index: 2;
+}
+
+.efeito .aura {
+  position: absolute;
+  /* Círculo centralizado, do tamanho do Pokémon, mesmo num painel largo */
+  inset: 0;
+  margin: auto;
+  width: var(--tamanho-aura, 140px);
+  height: var(--tamanho-aura, 140px);
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.efeito .particula {
+  position: absolute;
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  left: var(--x);
+  top: var(--y);
+  animation-delay: var(--atraso);
+}
+
+.efeito .frente {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Posição e atraso de cada partícula (a 1ª filha é a aura) */
+.efeito .particula:nth-child(2) { --x: 10%; --y: 20%; --atraso: 0s; }
+.efeito .particula:nth-child(3) { --x: 80%; --y: 12%; --atraso: 0.6s; }
+.efeito .particula:nth-child(4) { --x: 22%; --y: 70%; --atraso: 1.2s; }
+.efeito .particula:nth-child(5) { --x: 72%; --y: 64%; --atraso: 0.3s; }
+.efeito .particula:nth-child(6) { --x: 48%; --y: 4%;  --atraso: 0.9s; }
+.efeito .particula:nth-child(7) { --x: 4%;  --y: 48%; --atraso: 1.5s; }
+.efeito .particula:nth-child(8) { --x: 88%; --y: 42%; --atraso: 0.45s; }
+.efeito .particula:nth-child(9) { --x: 38%; --y: 84%; --atraso: 1.05s; }
+
+/* ---------- Elétrico: raios piscando e brilho amarelo ---------- */
+.efeito-electric .aura {
+  background: radial-gradient(circle, rgba(255, 225, 77, 0.55) 0%, rgba(255, 225, 77, 0) 70%);
+  animation: piscar-luz 2.2s infinite;
+}
+
+.efeito-electric .particula {
+  width: 16px;
+  height: 28px;
+  background: linear-gradient(#fff7b0, #ffd000);
+  clip-path: polygon(45% 0, 100% 0, 62% 42%, 95% 42%, 18% 100%, 40% 54%, 6% 54%);
+  filter: drop-shadow(0 0 4px #ffe14d);
+  animation: raio 1.8s infinite;
+}
+
+@keyframes raio {
+  0%, 100% { opacity: 0; transform: scale(0.6) rotate(-10deg); }
+  8%       { opacity: 1; transform: scale(1.1) rotate(5deg); }
+  14%      { opacity: 0.2; }
+  20%      { opacity: 1; transform: scale(1) rotate(-5deg); }
+  30%      { opacity: 0; }
+}
+
+@keyframes piscar-luz {
+  0%, 100% { opacity: 0.6; }
+  10%      { opacity: 1; }
+  15%      { opacity: 0.5; }
+  20%      { opacity: 1; }
+}
+
+/* ---------- Fogo: anel de chamas girando e brasas subindo ---------- */
+.efeito-fire .aura {
+  background: conic-gradient(#ff3d00, #ffb300, #ff6d00, #ffd54f, #ff3d00);
+  -webkit-mask: radial-gradient(farthest-side, transparent 70%, #000 74%, #000 88%, transparent 100%);
+  mask: radial-gradient(farthest-side, transparent 70%, #000 74%, #000 88%, transparent 100%);
+  filter: blur(4px);
+  animation: girar 3s linear infinite, pulsar-fogo 1.2s ease-in-out infinite;
+}
+
+.efeito-fire .particula {
+  top: 72%;
+  width: 14px;
+  height: 20px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: radial-gradient(circle at 50% 70%, #fff3b0 0%, #ffb300 40%, #ff3d00 80%);
+  filter: blur(0.5px);
+  animation: subir-brasa 1.8s ease-in infinite;
+}
+
+@keyframes subir-brasa {
+  0%   { opacity: 0; transform: translateY(0) scale(1); }
+  15%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-110px) scale(0.3); }
+}
+
+@keyframes pulsar-fogo {
+  0%, 100% { opacity: 0.75; }
+  50%      { opacity: 1; }
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Planta: folhas caindo e balançando ---------- */
+.efeito-grass .aura {
+  background: radial-gradient(circle, rgba(120, 200, 80, 0.35) 0%, rgba(120, 200, 80, 0) 70%);
+}
+
+.efeito-grass .particula {
+  top: -6%;
+  width: 14px;
+  height: 14px;
+  border-radius: 0 100% 0 100%;
+  background: linear-gradient(135deg, #a5d66f, #3f9b2f);
+  animation: cair-folha-alto 4.2s linear infinite;
+}
+
+.efeito-grass .particula:nth-child(even) {
+  background: linear-gradient(135deg, #c8e68a, #5aa83a);
+  animation-duration: 5s;
+}
+
+@keyframes cair-folha-alto {
+  0%   { opacity: 0; top: -6%;  transform: translateX(0) rotate(0deg); }
+  10%  { opacity: 1; }
+  30%  { top: 25%; transform: translateX(14px) rotate(110deg); }
+  55%  { top: 50%; transform: translateX(-10px) rotate(200deg); }
+  80%  { top: 75%; transform: translateX(12px) rotate(290deg); }
+  90%  { opacity: 1; }
+  100% { opacity: 0; top: 98%; transform: translateX(0) rotate(360deg); }
+}
+
+/* ---------- Água: Pokémon "dentro da água", com ondas e bolhas ---------- */
+.efeito-water .aura {
+  background: radial-gradient(circle, rgba(104, 144, 240, 0.3) 0%, rgba(104, 144, 240, 0) 70%);
+}
+
+.efeito-water .frente {
+  inset: auto -6% 0 -6%;
+  height: 42%;
+  background: linear-gradient(to bottom, rgba(120, 170, 255, 0.35), rgba(50, 100, 220, 0.6));
+  border-radius: 45% 55% 12px 12px / 22% 22% 12px 12px;
+  animation: onda 3s ease-in-out infinite;
+}
+
+.efeito-water .particula {
+  top: 88%;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  background: rgba(180, 215, 255, 0.35);
+  z-index: 4;
+  animation: subir-bolha 2.6s ease-in infinite;
+}
+
+@keyframes subir-bolha {
+  0%   { opacity: 0; transform: translateY(0) scale(0.6); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-70px) scale(1.1); }
+}
+
+@keyframes onda {
+  0%, 100% { border-radius: 45% 55% 12px 12px / 22% 22% 12px 12px; transform: translateY(0); }
+  50%      { border-radius: 55% 45% 12px 12px / 18% 26% 12px 12px; transform: translateY(-4px); }
+}
+
+/* ---------- Gelo: neve caindo e brilho azul claro ---------- */
+.efeito-ice .aura {
+  background: radial-gradient(circle, rgba(170, 230, 255, 0.5) 0%, rgba(170, 230, 255, 0) 70%);
+}
+
+.efeito-ice .particula {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 6px #bfefff;
+  animation: cair-neve 3.6s linear infinite;
+}
+
+@keyframes cair-neve {
+  0%   { opacity: 0; top: -4%; transform: translateX(0); }
+  15%  { opacity: 1; }
+  50%  { transform: translateX(10px); }
+  100% { opacity: 0; top: 96%; transform: translateX(-6px); }
+}
+
+/* ---------- Psíquico: ondas rosas se espalhando ---------- */
+.efeito-psychic .aura {
+  border: 3px solid rgba(248, 88, 136, 0.6);
+  animation: onda-psiquica 2.4s ease-out infinite;
+}
+
+.efeito-psychic .particula {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff8fb3;
+  box-shadow: 0 0 8px #f85888;
+  animation: brilhar 2.4s ease-in-out infinite;
+}
+
+@keyframes onda-psiquica {
+  0%   { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+
+/* ---------- Fada: estrelinhas brilhando ---------- */
+.efeito-fairy .aura {
+  background: radial-gradient(circle, rgba(255, 182, 210, 0.45) 0%, rgba(255, 182, 210, 0) 70%);
+}
+
+.efeito-fairy .particula {
+  width: 14px;
+  height: 14px;
+  background: #ffb6d2;
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+  filter: drop-shadow(0 0 4px #fff);
+  animation: brilhar 2s ease-in-out infinite;
+}
+
+@keyframes brilhar {
+  0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+  50%      { opacity: 1; transform: scale(1.1) rotate(45deg); }
+}
+
+/* ---------- Fantasma: névoa roxa e o Pokémon flutuando ---------- */
+.efeito-ghost .aura {
+  background: radial-gradient(circle, rgba(112, 88, 152, 0.5) 0%, rgba(112, 88, 152, 0) 70%);
+  animation: pulsar-fogo 3s ease-in-out infinite;
+}
+
+.efeito-ghost > img {
+  animation: flutuar 3s ease-in-out infinite;
+}
+
+.efeito-ghost .particula {
+  top: 75%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(150, 120, 200, 0.45);
+  filter: blur(3px);
+  animation: subir-brasa 3.2s ease-out infinite;
+}
+
+@keyframes flutuar {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+/* ---------- Veneno: bolhas roxas ---------- */
+.efeito-poison .aura {
+  background: radial-gradient(circle, rgba(160, 64, 160, 0.35) 0%, rgba(160, 64, 160, 0) 70%);
+}
+
+.efeito-poison .particula {
+  top: 80%;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #e9a6ff, #a040a0);
+  animation: subir-bolha 2.4s ease-in infinite;
+}
+
+/* ---------- Dragão: anel de energia roxo e azul ---------- */
+.efeito-dragon .aura {
+  background: conic-gradient(#7038f8, #4fc3f7, #b388ff, #7038f8);
+  -webkit-mask: radial-gradient(farthest-side, transparent 72%, #000 76%, #000 86%, transparent 100%);
+  mask: radial-gradient(farthest-side, transparent 72%, #000 76%, #000 86%, transparent 100%);
+  filter: blur(3px);
+  animation: girar 4s linear infinite;
+}
+
+.efeito-dragon .particula {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #b388ff;
+  box-shadow: 0 0 8px #7038f8;
+  animation: brilhar 2.2s ease-in-out infinite;
+}
+
+/* ---------- Sombrio: aura escura pulsando ---------- */
+.efeito-dark .aura {
+  background: radial-gradient(circle, rgba(40, 30, 50, 0.55) 0%, rgba(40, 30, 50, 0) 70%);
+  animation: pulsar-fogo 2s ease-in-out infinite;
+}
+
+.efeito-dark .particula {
+  top: 70%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(30, 20, 40, 0.45);
+  filter: blur(3px);
+  animation: subir-brasa 2.8s ease-out infinite;
+}
+
+/* ---------- Voador: rajadas de vento ---------- */
+.efeito-flying .aura {
+  background: radial-gradient(circle, rgba(152, 216, 216, 0.4) 0%, rgba(152, 216, 216, 0) 70%);
+}
+
+.efeito-flying .particula {
+  width: 34px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+  animation: vento 1.6s ease-in-out infinite;
+}
+
+@keyframes vento {
+  0%   { opacity: 0; transform: translateX(-30px); }
+  30%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(40px); }
+}
+
+/* ---------- Pedra e Terra: pedrinhas caindo e poeira ---------- */
+.efeito-rock .aura,
+.efeito-ground .aura {
+  background: radial-gradient(circle, rgba(184, 160, 56, 0.35) 0%, rgba(184, 160, 56, 0) 70%);
+}
+
+.efeito-rock .particula,
+.efeito-ground .particula {
+  width: 10px;
+  height: 9px;
+  border-radius: 40% 60% 50% 30%;
+  background: linear-gradient(135deg, #c9a95c, #7a5c2e);
+  animation: cair-pedra 2.4s ease-in infinite;
+}
+
+@keyframes cair-pedra {
+  0%   { opacity: 0; top: -4%; transform: rotate(0deg); }
+  10%  { opacity: 1; }
+  80%  { top: 86%; transform: rotate(200deg); }
+  88%  { top: 80%; }
+  100% { opacity: 0; top: 88%; transform: rotate(240deg); }
+}
+
+/* ---------- Aço: brilho metálico passando ---------- */
+.efeito-steel .aura {
+  background: radial-gradient(circle, rgba(184, 184, 208, 0.5) 0%, rgba(184, 184, 208, 0) 70%);
+}
+
+.efeito-steel .frente {
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.7) 50%, transparent 65%);
+  background-size: 250% 100%;
+  mix-blend-mode: overlay;
+  animation: brilho-metal 2.8s ease-in-out infinite;
+}
+
+@keyframes brilho-metal {
+  0%   { background-position: 120% 0; }
+  60%, 100% { background-position: -120% 0; }
+}
+
+/* ---------- Inseto: pontinhos voando em volta ---------- */
+.efeito-bug .aura {
+  background: radial-gradient(circle, rgba(168, 184, 32, 0.35) 0%, rgba(168, 184, 32, 0) 70%);
+}
+
+.efeito-bug .particula {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a8b820;
+  animation: zumbir 1.4s ease-in-out infinite;
+}
+
+@keyframes zumbir {
+  0%, 100% { opacity: 1; transform: translate(0, 0); }
+  25%      { transform: translate(8px, -6px); }
+  50%      { transform: translate(-6px, -10px); }
+  75%      { transform: translate(-8px, 4px); }
+}
+
+/* ---------- Lutador: ondas de impacto vermelhas ---------- */
+.efeito-fighting .aura {
+  border: 4px solid rgba(192, 48, 40, 0.6);
+  animation: onda-psiquica 1.4s ease-out infinite;
+}
+
+/* ---------- Normal: brilho suave ---------- */
+.efeito-normal .aura {
+  background: radial-gradient(circle, rgba(168, 168, 120, 0.3) 0%, rgba(168, 168, 120, 0) 70%);
+  animation: pulsar-fogo 3s ease-in-out infinite;
+}
+
+/* ---------- Nos cards, o efeito só anima ao passar o mouse ---------- */
+.efeito.so-hover .particula,
+.efeito.so-hover .aura,
+.efeito.so-hover .frente,
+.efeito.so-hover > img {
+  animation-play-state: paused;
+}
+
+.efeito.so-hover .particula {
+  visibility: hidden;
+}
+
+.carta:hover .efeito.so-hover .particula,
+.carta:focus-visible .efeito.so-hover .particula {
+  visibility: visible;
+}
+
+.carta:hover .efeito.so-hover .particula,
+.carta:hover .efeito.so-hover .aura,
+.carta:hover .efeito.so-hover .frente,
+.carta:hover .efeito.so-hover > img {
+  animation-play-state: running;
+}
+
+/* Quem prefere menos movimento (configuração do sistema) vê o Pokémon parado */
+@media (prefers-reduced-motion: reduce) {
+  .efeito .particula {
+    display: none;
+  }
+
+  .efeito .aura,
+  .efeito .frente,
+  .efeito > img {
+    animation: none !important;
+  }
+}

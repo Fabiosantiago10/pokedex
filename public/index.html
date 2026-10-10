@@ -5,44 +5,49 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Minha Pokédex</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="efeitos.css">
 </head>
 
 <body>
 
-  <header>
-    <h1>Minha Pokédex</h1>
-    <nav>
-      <a href="index.html" class="ativo">Ver Pokédex</a>
-      <a href="cadastro.html">Cadastrar Pokémon</a>
-      <a href="meus.html">Meus Pokémon</a>
-    </nav>
+  <header class="topo">
+    <div class="topo-conteudo">
+      <a href="index.html" class="marca"><span class="pokebola"></span> Minha Pokédex</a>
+      <nav>
+        <a href="index.html" class="ativo">Pokédex</a>
+        <a href="cadastro.html">Cadastrar</a>
+        <a href="meus.html">Meus Pokémon</a>
+      </nav>
+    </div>
   </header>
 
-  <!-- SEÇÃO TOP 5 -->
-  <section class="top5-container">
-    <h2 class="top5-titulo">🏆 Top 5 Mais Fortes</h2>
-    <div class="top5-lista" id="top5-lista">
-      <div class="top5-vazio">Nenhum Pokémon cadastrado ainda.</div>
-    </div>
+  <!-- Pódio: os 3 mais fortes, e 4º e 5º logo abaixo -->
+  <section class="secao-pagina">
+    <h2 class="titulo-secao">🏆 Os mais fortes da base</h2>
+    <div id="podio" class="podio"></div>
+    <div id="podio-resto" class="podio-resto"></div>
   </section>
 
-  <!-- SEÇÃO POKÉDEX -->
-  <section class="pokedex-container">
-    <h2 class="pokedex-titulo">Todos os Pokémons</h2>
-
-    <div class="controles">
-      <input type="text" id="busca" placeholder="Buscar Pokémon pelo nome...">
+  <section class="secao-pagina">
+    <div class="barra-ferramentas">
+      <h2 class="titulo-secao">Todos os Pokémon <span id="contador" class="contador"></span></h2>
+      <div class="alternar-visao" role="group" aria-label="Forma de exibir">
+        <button type="button" data-visao="cards" class="ativo">Cartas</button>
+        <button type="button" data-visao="ranking">Ranking</button>
+      </div>
     </div>
+    <input type="search" id="busca" class="busca" placeholder="Buscar Pokémon pelo nome..." autocomplete="off">
 
-    <main id="lista"></main>
-
+    <div id="lista" class="grade-cartas"></div>
+    <div id="ranking" class="ranking" hidden></div>
   </section>
 
-  <div id="detalhe" onclick="fecharDetalhe()">
-    <div id="detalhe-conteudo" onclick="event.stopPropagation()">
-      <button onclick="fecharDetalhe()" style="float:right; border:none; background:none; font-size:20px; cursor:pointer;">✕</button>
-    </div>
+  <div id="detalhe" class="modal" onclick="fecharDetalhe()">
+    <div id="detalhe-conteudo" class="modal-conteudo" onclick="event.stopPropagation()"></div>
   </div>
 
   <script src="comum.js"></script>

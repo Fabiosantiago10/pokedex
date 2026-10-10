@@ -324,3 +324,39 @@ main.formulario-container {
   font-size: 14px;
   margin: 10px 0 0 0;
 }
+
+/* Imagem do Pokémon escolhido */
+.preview-especie {
+  display: block;
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  margin-top: 6px;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.18));
+}
+
+.preview-especie[hidden] {
+  display: none;
+}
+
+/* Formulário no mesmo estilo do resto do site */
+.secao-form {
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(31, 41, 51, 0.08);
+}
+
+.campo input,
+.campo select {
+  border-radius: 10px;
+  font-family: inherit;
+}
+
+.btn-salvar {
+  border-radius: 999px;
+  background: #e3350d;
+  font-family: inherit;
+}
+
+.btn-salvar:hover {
+  background: #b52a0a;
+}

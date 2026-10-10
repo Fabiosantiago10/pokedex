@@ -1,183 +1,314 @@
-function renderizarTop5(pokemons) {
-  const top5 = [...pokemons]
-    .sort((a, b) => b.pontuacao - a.pontuacao)
-    .slice(0, 5)
+// Página principal: pódio, cards, ranking e detalhes.
+// Nada aqui mostra o treinador: a API pública não envia de quem é cada Pokémon.
 
-  const lista = document.getElementById('top5-lista')
+let todosPokemons = []
+let visao = 'cards'
 
-  if (top5.length === 0) {
-    lista.innerHTML = '<div class="top5-vazio">Nenhum Pokémon cadastrado ainda.</div>'
+function corTipo(tipo) {
+  return coresTipo[tipo] || '#9aa0a6'
+}
+
+// Fundo suave com as cores dos tipos do Pokémon
+function fundoTipo(p) {
+  const c1 = corTipo(p.tipo1)
+  const c2 = p.tipo2 ? corTipo(p.tipo2) : c1
+  return `linear-gradient(135deg, ${c1}40 0%, ${c2}26 100%)`
+}
+
+function linhaIdentificacao(p) {
+  return `<span class="identificacao">${identificacao(p)}</span>`
+}
+
+function resumoIVs(p) {
+  const perfeitos = contarPerfeitos(p.ivs)
+  return `IVs ${soma(p.ivs)}/186${perfeitos ? ` · <span class="perfeitos">${perfeitos}×31</span>` : ''}`
+}
+
+// Status em grade compacta (HP, Atq, Def...), com a natureza em verde/vermelho
+function statsCompactos(p) {
+  return `<span class="stats-compactos">${ATRIBUTOS.map(a => `
+    <span class="stat-compacto ${marcaNatureza(p.natureza, a)}"><small>${ABREVIACOES[a]}</small><strong>${p.stats[a]}</strong></span>
+  `).join('')}</span>`
+}
+
+// Status em lista (um por linha), igual ao das cartas
+function statsLista(p) {
+  return `<span class="stats-lista">${ATRIBUTOS.map(a => `
+    <span class="atributo ${marcaNatureza(p.natureza, a)}">
+      <span class="atributo-nome">${NOMES_ATRIBUTOS[a]}</span>
+      <strong>${p.stats[a]}</strong>
+    </span>
+  `).join('')}</span>`
+}
+
+// A ordem continua do mais forte para o mais fraco (IVs + stats); só a nota não aparece
+function ordenarPorNota(lista) {
+  return [...lista].sort((a, b) => b.pontuacao - a.pontuacao)
+}
+
+// ---------- Pódio ----------
+function renderizarPodio(lista) {
+  const top = ordenarPorNota(lista).slice(0, 5)
+  const podio = document.getElementById('podio')
+  const resto = document.getElementById('podio-resto')
+
+  if (top.length === 0) {
+    podio.innerHTML = '<p class="vazio">Nenhum Pokémon cadastrado ainda. Seja o primeiro!</p>'
+    resto.innerHTML = ''
     return
   }
 
-  const medalhas = ['ouro', 'prata', 'bronze', '', '']
-  const emojis = ['🥇', '🥈', '🥉', '4º', '5º']
-
-  lista.innerHTML = top5.map(function(p, i) {
+  // Ordem visual do pódio: 2º, 1º, 3º
+  const medalhas = ['🥇', '🥈', '🥉']
+  const ordem = [1, 0, 2].filter(i => top[i])
+  podio.innerHTML = ordem.map(i => {
+    const p = top[i]
     return `
-      <div class="top5-card" data-id="${escaparHtml(p.id)}" style="border-top-color:${coresTipo[p.tipo1] || '#ccc'}">
-        <div class="top5-posicao ${medalhas[i]}">${emojis[i]}</div>
-        <div class="top5-nome">${escaparHtml(p.nome)}</div>
-        ${p.alfa || p.shiny ? `<div>${selosVariante(p)}</div>` : ''}
-        <div class="treinador">de ${escaparHtml(p.treinador)}</div>
-        <div style="margin-bottom:6px">${badgeTipo(p.tipo1)}${badgeTipo(p.tipo2)}</div>
-        <div class="top5-pontuacao">${p.pontuacao}<span>/100</span></div>
-      </div>
+      <button type="button" class="podio-item lugar-${i + 1}" data-id="${escaparHtml(p.id)}" style="background:${fundoTipo(p)}">
+        <span class="medalha">${medalhas[i]}</span>
+        ${imagemComEfeito(p, 'podio-imagem')}
+        <span class="podio-nome">${escaparHtml(p.nome)}</span>
+        <span class="tipos">${badgeTipo(p.tipo1)}${badgeTipo(p.tipo2)}</span>
+        ${p.alfa || p.shiny ? `<span>${selosVariante(p)}</span>` : ''}
+        ${statsLista(p)}
+        <span class="podio-ivs">${resumoIVs(p)}</span>
+        <span class="degrau">${i + 1}º</span>
+      </button>
     `
   }).join('')
 
-  lista.querySelectorAll('.top5-card').forEach(function(card) {
-    card.addEventListener('click', function() {
-      abrirDetalhe(todosPokemons.find(p => p.id === card.dataset.id))
-    })
-  })
+  resto.innerHTML = top.slice(3).map((p, i) => `
+    <button type="button" class="resto-item" data-id="${escaparHtml(p.id)}">
+      <span class="resto-posicao">${i + 4}º</span>
+      ${imagemPokemon(p, 'resto-imagem')}
+      <span class="resto-nome">${escaparHtml(p.nome)} ${selosVariante(p)}</span>
+      <span class="tipos">${badgeTipo(p.tipo1)}${badgeTipo(p.tipo2)}</span>
+      <span class="resto-ivs">${resumoIVs(p)}</span>
+      <span class="resto-stats">${statsLista(p)}</span>
+    </button>
+  `).join('')
+}
+
+// ---------- Cartas (status no estilo das cartas de Super Trunfo) ----------
+function htmlCarta(p) {
+  const stats = p.stats
+  const cor = corTipo(p.tipo1)
+  const perfeitos = contarPerfeitos(p.ivs)
+  return `
+    <button type="button" class="carta" data-id="${escaparHtml(p.id)}" style="--cor:${cor}">
+      <span class="carta-cabecalho">
+        <span class="carta-codigo">#${escaparHtml(p.numero)}</span>
+        <span class="carta-nome">${escaparHtml(p.nome)}</span>
+      </span>
+      <span class="carta-arte" style="background:${fundoTipo(p)}">
+        ${imagemComEfeito(p, 'carta-imagem', 'so-hover')}
+        <span class="carta-tipos">${badgeTipo(p.tipo1)}${badgeTipo(p.tipo2)}</span>
+        ${p.alfa || p.shiny ? `<span class="carta-selos">${selosVariante(p)}</span>` : ''}
+      </span>
+      <span class="carta-atributos">
+        <span class="carta-subtitulo">Stats</span>
+        ${ATRIBUTOS.map(a => `
+          <span class="atributo ${marcaNatureza(p.natureza, a)}">
+            <span class="atributo-nome">${NOMES_ATRIBUTOS[a]}</span>
+            <strong>${stats[a]}</strong>
+          </span>
+        `).join('')}
+      </span>
+      <span class="carta-resumo">
+        <span class="resumo-bloco">
+          <small>IVs</small>
+          <strong>${soma(p.ivs)}<em>/186</em></strong>
+          ${perfeitos ? `<span class="perfeitos">${perfeitos}×31</span>` : ''}
+        </span>
+        <span class="resumo-bloco">
+          <small>EVs</small>
+          <strong>${soma(p.evs)}<em>/510</em></strong>
+        </span>
+        <span class="resumo-bloco">
+          <small>Nível</small>
+          <strong>${p.nivel}${SIMBOLO_SEXO[p.sexo] ? ' ' + SIMBOLO_SEXO[p.sexo] : ''}</strong>
+        </span>
+      </span>
+      <span class="carta-rodape">
+        <span><small>Natureza</small> ${escaparHtml(p.natureza || '—')} ${p.natureza ? `<em>(${efeitoNatureza(p.natureza)})</em>` : ''}</span>
+        <span><small>Habilidade</small> ${escaparHtml(p.habilidade || '—')}</span>
+      </span>
+    </button>
+  `
 }
 
 function renderizarCards(lista) {
-  const main = document.getElementById('lista')
-  main.innerHTML = ''
-
+  const grade = document.getElementById('lista')
   if (lista.length === 0) {
-    main.innerHTML = '<p style="color:#aaa; text-align:center; grid-column:1 / -1">Nenhum Pokémon encontrado.</p>'
+    grade.innerHTML = '<p class="vazio">Nenhum Pokémon encontrado.</p>'
     return
   }
-
-  lista.forEach(function(pokemon) {
-    const card = document.createElement('div')
-    card.className = 'card'
-    card.style.borderTopColor = coresTipo[pokemon.tipo1] || "#ccc"
-    card.innerHTML = `
-      <span class="numero">#${escaparHtml(pokemon.numero)}</span>
-      <h2>${escaparHtml(pokemon.nome)}</h2>
-      ${selosVariante(pokemon)}
-      <div class="treinador">Treinador: ${escaparHtml(pokemon.treinador)}</div>
-      <div class="identificacao">${identificacao(pokemon)}</div>
-      <div>${badgeTipo(pokemon.tipo1)}${badgeTipo(pokemon.tipo2)}</div>
-      <div class="stats">
-        <span>HP: ${pokemon.stats.hp}</span>
-        <span>Ataque: ${pokemon.stats.ataque}</span>
-        <span>Velocidade: ${pokemon.stats.velocidade}</span>
-      </div>
-      <div class="iv-total">IVs: ${soma(pokemon.ivs)}/186</div>
-      <div class="pontuacao-card">⭐ ${pokemon.pontuacao}/100</div>
-    `
-    card.addEventListener('click', function() { abrirDetalhe(pokemon) })
-    main.appendChild(card)
-  })
+  grade.innerHTML = lista.map(htmlCarta).join('')
 }
 
-function tabela(obj, sufixo = '') {
-  return `<table>${ATRIBUTOS.map(a =>
-    `<tr><td>${NOMES_ATRIBUTOS[a]}</td><td>${obj[a]}${sufixo}</td></tr>`
-  ).join('')}</table>`
-}
-
-// Ranking da mesma espécie entre todos os treinadores, com o Pokémon aberto destacado
-function htmlComparativo(pokemon) {
-  const alvo = pokemon.nome.toLowerCase()
-  const ranking = todosPokemons
-    .filter(p => p.nome.toLowerCase() === alvo)
-    .sort((a, b) => b.pontuacao - a.pontuacao)
-
-  if (ranking.length < 2) {
-    return `<p class="comparativo-vazio">Ainda não há outro ${escaparHtml(pokemon.nome)} na base.
-      Mande o link para um amigo cadastrar o dele!</p>`
+// ---------- Ranking detalhado ----------
+function renderizarRanking(lista) {
+  const div = document.getElementById('ranking')
+  if (lista.length === 0) {
+    div.innerHTML = '<p class="vazio">Nenhum Pokémon encontrado.</p>'
+    return
   }
-
-  const media = Math.round(ranking.reduce((t, p) => t + p.pontuacao, 0) / ranking.length)
-  const posicao = ranking.findIndex(p => p.id === pokemon.id) + 1
-
-  return `
-    <p class="comparativo-resumo">
-      ${posicao}º de ${ranking.length} ${escaparHtml(pokemon.nome)} na base · média ${media}/100
-    </p>
-    <table class="comparativo">
-      <tr>
-        <th>#</th><th>Treinador</th><th>Identificação</th>
-        ${ATRIBUTOS.map(a => `<th title="IV ${NOMES_ATRIBUTOS[a]}">IV ${NOMES_ATRIBUTOS[a]}</th>`).join('')}
-        <th>EVs</th><th>Nota</th>
-      </tr>
-      ${ranking.map((p, i) => `
-        <tr class="${p.id === pokemon.id ? 'atual' : ''}">
-          <td>${i + 1}º</td>
-          <td>${escaparHtml(p.treinador)} ${selosVariante(p)}</td>
-          <td class="col-identificacao">${identificacao(p)}</td>
-          ${ATRIBUTOS.map(a => `<td class="${p.ivs[a] === 31 ? 'perfeito' : ''}">${p.ivs[a]}</td>`).join('')}
-          <td>${soma(p.evs)}</td>
-          <td><strong>${p.pontuacao}</strong></td>
+  div.innerHTML = `
+    <table class="tabela-ranking">
+      <thead>
+        <tr>
+          <th>#</th><th colspan="2">Pokémon</th><th class="col-opcional">Nível · Natureza</th>
+          <th>IVs</th><th class="col-opcional">EVs</th><th class="col-opcional">Status</th>
         </tr>
-      `).join('')}
+      </thead>
+      <tbody>
+        ${lista.map((p, i) => `
+          <tr data-id="${escaparHtml(p.id)}" tabindex="0">
+            <td class="col-posicao">${i < 3 ? ['🥇', '🥈', '🥉'][i] : (i + 1) + 'º'}</td>
+            <td class="col-imagem">${imagemPokemon(p, 'ranking-imagem')}</td>
+            <td>
+              <strong>${escaparHtml(p.nome)}</strong> ${selosVariante(p)}<br>
+              <span class="tipos">${badgeTipo(p.tipo1)}${badgeTipo(p.tipo2)}</span>
+            </td>
+            <td class="col-opcional">${linhaIdentificacao(p)}</td>
+            <td class="col-ivs">
+              <span class="valor-ivs">${soma(p.ivs)}<small>/186</small></span>
+              ${contarPerfeitos(p.ivs) ? `<span class="perfeitos">${contarPerfeitos(p.ivs)}×31</span>` : ''}
+              ${barra(soma(p.ivs), 186, corTipo(p.tipo1))}
+            </td>
+            <td class="col-opcional">${soma(p.evs)}<small>/510</small></td>
+            <td class="col-opcional col-stats">${statsCompactos(p)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
     </table>
   `
 }
 
-// O botão de editar só aparece para quem cadastrou (nick salvo neste navegador)
-function ehDoTreinadorAtual(pokemon) {
-  return treinadorAtual() === pokemon.treinador.toLowerCase()
+// ---------- Detalhes ----------
+function linhasBarras(valores, maximo, cor, destaque31) {
+  return ATRIBUTOS.map(a => `
+    <div class="linha-barra">
+      <span class="rotulo-barra">${NOMES_ATRIBUTOS[a]}</span>
+      <span class="valor-barra ${destaque31 && valores[a] === 31 ? 'perfeito' : ''}">${valores[a]}</span>
+      ${barra(valores[a], maximo, cor)}
+    </div>
+  `).join('')
+}
+
+function barrasStats(stats, cor) {
+  const maior = Math.max(...ATRIBUTOS.map(a => stats[a]))
+  return linhasBarras(stats, Math.max(255, maior), cor, false)
+}
+
+// Ranking da mesma espécie, com o Pokémon aberto destacado (sem nomes de treinador)
+function htmlComparativo(pokemon) {
+  const alvo = pokemon.nome.toLowerCase()
+  const ranking = ordenarPorNota(todosPokemons.filter(p => p.nome.toLowerCase() === alvo))
+
+  if (ranking.length < 2) {
+    return `<p class="vazio-pequeno">Ainda não há outro ${escaparHtml(pokemon.nome)} na base.
+      Mande o link para um amigo cadastrar o dele!</p>`
+  }
+
+  const posicao = ranking.findIndex(p => p.id === pokemon.id) + 1
+
+  return `
+    <p class="comparativo-resumo"><strong>${posicao}º de ${ranking.length}</strong> ${escaparHtml(pokemon.nome)} na base</p>
+    <div class="tabela-rolagem">
+      <table class="comparativo">
+        <tr>
+          <th>#</th><th>Nível · Natureza</th>
+          ${ATRIBUTOS.map(a => `<th title="IV de ${NOMES_ATRIBUTOS[a]}">${NOMES_ATRIBUTOS[a]}</th>`).join('')}
+          <th>EVs</th>
+        </tr>
+        ${ranking.map((p, i) => `
+          <tr class="${p.id === pokemon.id ? 'atual' : ''}">
+            <td>${i + 1}º</td>
+            <td class="col-identificacao">${identificacao(p)} ${selosVariante(p)}</td>
+            ${ATRIBUTOS.map(a => `<td class="${p.ivs[a] === 31 ? 'perfeito' : ''}">${p.ivs[a]}</td>`).join('')}
+            <td>${soma(p.evs)}</td>
+          </tr>
+        `).join('')}
+      </table>
+    </div>
+  `
 }
 
 function abrirDetalhe(pokemon) {
   if (!pokemon) return
-  document.getElementById('detalhe').style.display = 'flex'
+  const cor = corTipo(pokemon.tipo1)
+  const modal = document.getElementById('detalhe')
+  modal.classList.add('aberto')
+  document.body.classList.add('sem-rolagem')
+
   document.getElementById('detalhe-conteudo').innerHTML = `
-    <button onclick="fecharDetalhe()" style="float:right; border:none; background:none; font-size:20px; cursor:pointer;">✕</button>
-    <div class="detalhe-header">
-      <span class="numero">#${escaparHtml(pokemon.numero)}</span>
-      <h2>${escaparHtml(pokemon.nome)}</h2>
-      ${selosVariante(pokemon)}
-      <div style="margin:6px 0">${badgeTipo(pokemon.tipo1)}${badgeTipo(pokemon.tipo2)}</div>
-      <p style="color:#666; font-size:14px">Treinador: <strong>${escaparHtml(pokemon.treinador)}</strong></p>
-      <p style="color:#666; font-size:14px">Natureza: ${escaparHtml(pokemon.natureza)} | Habilidade: ${escaparHtml(pokemon.habilidade)}</p>
-      <p style="color:#666; font-size:14px">${identificacao(pokemon)} | EXP p/ próx. nível: ${pokemon.proxNivel.toLocaleString()}</p>
-      ${ehDoTreinadorAtual(pokemon)
-        ? `<a class="btn-editar" href="cadastro.html?editar=${encodeURIComponent(pokemon.id)}">✏️ Editar</a>`
-        : ''}
+    <button type="button" class="fechar" onclick="fecharDetalhe()" aria-label="Fechar">✕</button>
+    <div class="detalhe-topo" style="background:${fundoTipo(pokemon)}">
+      ${imagemComEfeito(pokemon, 'detalhe-imagem')}
+      <div class="detalhe-info">
+        <span class="card-numero">#${escaparHtml(pokemon.numero)}</span>
+        <h2>${escaparHtml(pokemon.nome)}</h2>
+        <div class="tipos">${badgeTipo(pokemon.tipo1)}${badgeTipo(pokemon.tipo2)} ${selosVariante(pokemon)}</div>
+        <p>${identificacao(pokemon)}${pokemon.habilidade ? ' · ' + escaparHtml(pokemon.habilidade) : ''}</p>
+      </div>
     </div>
-    <div class="pontuacao-detalhe">
-      <span>${pokemon.pontuacao}</span><small>/100</small>
-      <p>Pontuação geral (70% IVs + 30% stats no Lv. 100)</p>
+
+
+    <div class="detalhe-grade">
+      <div class="painel">
+        <div class="painel-cabecalho">
+          <h3>Stats</h3>
+          <div class="alternar-stats" id="alternar-stats" hidden>
+            <button type="button" data-nivel="${pokemon.nivel}" class="ativo">Nv ${pokemon.nivel}</button>
+            <button type="button" data-nivel="100">🔄 Lv. 100</button>
+          </div>
+        </div>
+        <div id="barras-stats">${barrasStats(pokemon.stats, cor)}</div>
+        <p class="nota-projecao" id="nota-projecao" hidden>Projeção com os IVs, EVs e natureza atuais.</p>
+        <p class="felicidade">Felicidade: ${pokemon.stats.felicidade}%</p>
+      </div>
+
+      <div class="painel">
+        <div class="painel-cabecalho">
+          <h3>IVs</h3>
+          <span class="total-badge">${soma(pokemon.ivs)}/186</span>
+        </div>
+        ${linhasBarras(pokemon.ivs, 31, cor, true)}
+      </div>
+
+      <div class="painel">
+        <div class="painel-cabecalho">
+          <h3>EVs</h3>
+          <span class="total-badge">${soma(pokemon.evs)}/510</span>
+        </div>
+        ${linhasBarras(pokemon.evs, 252, cor, false)}
+      </div>
+
+      <div class="painel">
+        <div class="painel-cabecalho"><h3>Ataques</h3></div>
+        <div class="ataques">
+          ${pokemon.movimentos.map(m => `
+            <span class="ataque" style="border-color:${corTipo(m.tipo)}">
+              <span>${escaparHtml(m.nome)}</span>${badgeTipo(m.tipo)}
+            </span>
+          `).join('') || '<p class="vazio-pequeno">Nenhum ataque cadastrado.</p>'}
+        </div>
+      </div>
     </div>
-    <div class="secao secao-comparativo">
-      <h3>Comparativo com outros treinadores</h3>
+
+    <div class="painel painel-largo">
+      <div class="painel-cabecalho"><h3>Comparativo da espécie</h3></div>
       ${htmlComparativo(pokemon)}
     </div>
-    <div class="detalhe-secoes">
-      <div class="secao">
-        <h3>Stats</h3>
-        <div class="alternar-stats" id="alternar-stats" hidden>
-          <button type="button" data-nivel="${pokemon.nivel}" class="ativo">Nv ${pokemon.nivel} (atual)</button>
-          <button type="button" data-nivel="100">🔄 No Lv. 100</button>
-        </div>
-        <div id="tabela-stats">${tabela(pokemon.stats)}</div>
-        <p class="nota-projecao" id="nota-projecao" hidden>Projeção com os IVs, EVs e natureza atuais.</p>
-        <table><tr><td>Felicidade</td><td>${pokemon.stats.felicidade}%</td></tr></table>
-      </div>
-      <div class="secao">
-        <h3>EVs <span class="total-badge">${soma(pokemon.evs)}/510</span></h3>
-        ${tabela(pokemon.evs)}
-      </div>
-      <div class="secao">
-        <h3>IVs <span class="total-badge">${soma(pokemon.ivs)}/186</span></h3>
-        ${tabela(pokemon.ivs)}
-      </div>
-      <div class="secao">
-        <h3>Movimentos</h3>
-        ${pokemon.movimentos.map(m => `
-          <div class="movimento">
-            <span>${escaparHtml(m.nome)}</span>
-            ${badgeTipo(m.tipo)}
-          </div>
-        `).join('') || '<p style="color:#aaa; font-size:14px">Nenhum movimento cadastrado.</p>'}
-      </div>
-    </div>
   `
-  prepararProjecao(pokemon)
+  prepararProjecao(pokemon, cor)
 }
 
-// Busca os stats base da espécie e ativa o botão "No Lv. 100", igual ao do jogo
+// Busca os stats base da espécie e ativa o botão "Lv. 100", igual ao do jogo
 let detalheAberto = null
 
-async function prepararProjecao(pokemon) {
+async function prepararProjecao(pokemon, cor) {
   detalheAberto = pokemon.id
   if (pokemon.nivel >= 100) return  // já está no nível máximo
   let base
@@ -201,7 +332,7 @@ async function prepararProjecao(pokemon) {
       const stats = noAtual
         ? pokemon.stats
         : calcularStats(base, pokemon.ivs, pokemon.evs, pokemon.natureza, nivel)
-      document.getElementById('tabela-stats').innerHTML = tabela(stats)
+      document.getElementById('barras-stats').innerHTML = barrasStats(stats, cor)
       document.getElementById('nota-projecao').hidden = noAtual
       botoes.querySelectorAll('button').forEach(b => b.classList.toggle('ativo', b === botao))
     })
@@ -210,20 +341,48 @@ async function prepararProjecao(pokemon) {
 
 function fecharDetalhe() {
   detalheAberto = null
-  document.getElementById('detalhe').style.display = 'none'
+  document.getElementById('detalhe').classList.remove('aberto')
+  document.body.classList.remove('sem-rolagem')
 }
 
-let todosPokemons = []
+document.addEventListener('keydown', function(evento) {
+  if (evento.key === 'Escape') fecharDetalhe()
+})
 
-// Cards sempre do mais forte para o mais fraco
+// Qualquer card, linha do ranking ou item do pódio abre os detalhes
+document.addEventListener('click', function(evento) {
+  const alvo = evento.target.closest('[data-id]')
+  if (!alvo || alvo.closest('#detalhe')) return
+  abrirDetalhe(todosPokemons.find(p => p.id === alvo.dataset.id))
+})
+document.getElementById('ranking').addEventListener('keydown', function(evento) {
+  const linha = evento.target.closest('tr[data-id]')
+  if (linha && evento.key === 'Enter') abrirDetalhe(todosPokemons.find(p => p.id === linha.dataset.id))
+})
+
+// ---------- Filtro e troca de visão ----------
 function aplicarFiltros() {
-  const texto = document.getElementById('busca').value.toLowerCase()
-  const filtrados = todosPokemons
-    .filter(p => p.nome.toLowerCase().includes(texto))
-    .sort((a, b) => b.pontuacao - a.pontuacao)
-  renderizarCards(filtrados)
+  const texto = document.getElementById('busca').value.trim().toLowerCase()
+  const filtrados = ordenarPorNota(todosPokemons.filter(p => p.nome.toLowerCase().includes(texto)))
+  document.getElementById('contador').textContent = filtrados.length ? `(${filtrados.length})` : ''
+  if (visao === 'cards') renderizarCards(filtrados)
+  else renderizarRanking(filtrados)
 }
 
+function trocarVisao(nova) {
+  visao = nova
+  document.getElementById('lista').hidden = nova !== 'cards'
+  document.getElementById('ranking').hidden = nova !== 'ranking'
+  document.querySelectorAll('.alternar-visao button').forEach(b => b.classList.toggle('ativo', b.dataset.visao === nova))
+  try {
+    localStorage.setItem('visao', nova)
+  } catch (e) {}
+  aplicarFiltros()
+}
+
+document.querySelectorAll('.alternar-visao button').forEach(function(botao) {
+  botao.addEventListener('click', () => trocarVisao(botao.dataset.visao))
+})
 document.getElementById('busca').addEventListener('input', aplicarFiltros)
 
 async function carregarPokemons() {
@@ -232,20 +391,22 @@ async function carregarPokemons() {
     todosPokemons = await resposta.json()
   } catch (erro) {
     document.getElementById('lista').innerHTML =
-      '<p style="color:#cc0000; text-align:center; grid-column:1 / -1">Não foi possível falar com o servidor. Ele está rodando?</p>'
+      '<p class="vazio erro">Não foi possível falar com o servidor. Tente recarregar a página.</p>'
     console.error(erro)
     return
   }
 
-  renderizarTop5(todosPokemons)
-  aplicarFiltros()
+  renderizarPodio(todosPokemons)
 
   // Vindo do cadastro (index.html?especie=Pikachu): já filtra pela espécie
   const especie = new URLSearchParams(location.search).get('especie')
-  if (especie) {
-    document.getElementById('busca').value = especie
-    aplicarFiltros()
-  }
+  if (especie) document.getElementById('busca').value = especie
+
+  let salva = 'cards'
+  try {
+    salva = localStorage.getItem('visao') || 'cards'
+  } catch (e) {}
+  trocarVisao(salva === 'ranking' ? 'ranking' : 'cards')
 }
 
 carregarPokemons()

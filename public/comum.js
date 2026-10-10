@@ -58,6 +58,22 @@ const NATUREZAS = {
   Sassy: ['defEsp', 'velocidade'], Timid: ['velocidade', 'ataque']
 }
 
+const ABREVIACOES = { hp: 'HP', ataque: 'Atq', defesa: 'Def', atqEsp: 'AtqEsp', defEsp: 'DefEsp', velocidade: 'Vel' }
+
+// Ex: "Lonely" -> "+Atq −Def"; naturezas neutras -> "neutra"
+function efeitoNatureza(natureza) {
+  const efeito = NATUREZAS[natureza]
+  if (!efeito) return natureza ? 'neutra' : ''
+  return `+${ABREVIACOES[efeito[0]]} −${ABREVIACOES[efeito[1]]}`
+}
+
+// 'sobe', 'desce' ou '' para o atributo, conforme a natureza
+function marcaNatureza(natureza, atributo) {
+  const efeito = NATUREZAS[natureza]
+  if (!efeito) return ''
+  return efeito[0] === atributo ? 'sobe' : efeito[1] === atributo ? 'desce' : ''
+}
+
 // Mesma fórmula dos jogos: calcula os stats em qualquer nível
 // a partir dos stats base da espécie, IVs, EVs e natureza.
 function calcularStats(base, ivs, evs, natureza, nivel) {
@@ -74,6 +90,84 @@ function calcularStats(base, ivs, evs, natureza, nivel) {
     }
   })
   return stats
+}
+
+// Imagem oficial do Pokémon (arte da PokéAPI), pelo número da Pokédex. Shiny tem arte própria.
+function urlImagem(p) {
+  const numero = parseInt(p.numero, 10)
+  if (!numero) return ''
+  const pasta = p.shiny ? 'shiny/' : ''
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pasta}${numero}.png`
+}
+
+// Sprite animado em pixel art (Black/White), parecido com o do PokeMMO. Só existe até o #649.
+const ULTIMO_SPRITE_ANIMADO = 649
+
+function urlSpriteAnimado(p) {
+  const numero = parseInt(p.numero, 10)
+  if (!numero || numero > ULTIMO_SPRITE_ANIMADO) return ''
+  const pasta = p.shiny ? 'shiny/' : ''
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${pasta}${numero}.gif`
+}
+
+// Se a imagem não carregar, mostra uma Pokébola no lugar
+function imagemPokemon(p, classe = '') {
+  const url = urlImagem(p)
+  if (!url) return `<span class="imagem-vazia ${classe}"></span>`
+  return `<img class="${classe}" src="${url}" alt="${escaparHtml(p.nome)}" loading="lazy"
+    onerror="this.outerHTML='<span class=&quot;imagem-vazia ${classe}&quot;></span>'">`
+}
+
+// Pixel art animado quando existe; senão (ou se falhar), a arte oficial
+function spritePokemon(p, classe = '') {
+  const animado = urlSpriteAnimado(p)
+  const arte = urlImagem(p)
+  if (!animado) return imagemPokemon(p, classe)
+  return `<img class="${classe} pixel" src="${animado}" alt="${escaparHtml(p.nome)}" loading="lazy"
+    onerror="this.onerror=null; this.classList.remove('pixel'); this.src='${arte}'">`
+}
+
+// Pokémon num "palco" escuro na cor do tipo (como no Sumário do PokeMMO), com efeito animado:
+// raios (Elétrico), chamas (Fogo), folhas (Planta), água com bolhas (Água), neve (Gelo) etc. Ver efeitos.css.
+function imagemComEfeito(p, classe = '', extra = '') {
+  const tipo = String(p.tipo1 || 'Normal').toLowerCase()
+  const cor = coresTipo[p.tipo1] || '#9aa0a6'
+  const particulas = '<span class="particula"></span>'.repeat(8)
+  return `<span class="efeito palco efeito-${escaparHtml(tipo)} ${extra}" style="--cor-tipo:${cor}">
+    <span class="aura"></span>${particulas}${spritePokemon(p, classe)}<span class="frente"></span>
+  </span>`
+}
+
+// Barra de progresso (ex: IV 28 de 31). Valor no máximo ganha destaque dourado.
+function barra(valor, maximo, cor) {
+  const pct = Math.max(0, Math.min(100, (valor / maximo) * 100))
+  const classe = valor >= maximo ? 'barra-preenchida maximo' : 'barra-preenchida'
+  return `<span class="barra"><span class="${classe}" style="width:${pct}%;${cor ? 'background:' + cor : ''}"></span></span>`
+}
+
+function contarPerfeitos(ivs) {
+  return ATRIBUTOS.filter(a => ivs[a] === 31).length
+}
+
+// Sessão de "Meus Pokémon" (nick + PIN). Fica só nesta aba e some ao fechá-la.
+function lerSessao() {
+  try {
+    return JSON.parse(sessionStorage.getItem('sessao') || 'null')
+  } catch (e) {
+    return null
+  }
+}
+
+function salvarSessao(nick, pin) {
+  try {
+    sessionStorage.setItem('sessao', JSON.stringify({ nick, pin }))
+  } catch (e) {}
+}
+
+function encerrarSessao() {
+  try {
+    sessionStorage.removeItem('sessao')
+  } catch (e) {}
 }
 
 // Nick do jogo salvo neste navegador (ao cadastrar ou em "Meus Pokémon")

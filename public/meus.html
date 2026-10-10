@@ -5,35 +5,71 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meus Pokémon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="meus.css">
 </head>
 
 <body>
 
-  <header>
-    <h1>Minha Pokédex</h1>
-    <nav>
-      <a href="index.html">Ver Pokédex</a>
-      <a href="cadastro.html">Cadastrar Pokémon</a>
-      <a href="meus.html" class="ativo">Meus Pokémon</a>
-    </nav>
+  <header class="topo">
+    <div class="topo-conteudo">
+      <a href="index.html" class="marca"><span class="pokebola"></span> Minha Pokédex</a>
+      <nav>
+        <a href="index.html">Pokédex</a>
+        <a href="cadastro.html">Cadastrar</a>
+        <a href="meus.html" class="ativo">Meus Pokémon</a>
+      </nav>
+    </div>
   </header>
 
-  <section class="meus-container">
-    <h2>Meus Pokémon</h2>
-    <p class="meus-subtitulo">Digite o seu nick do jogo (o mesmo usado no cadastro) para ver os seus Pokémon, do mais forte para o mais fraco em cada espécie.</p>
+  <section class="secao-pagina">
 
-    <form id="form-nick" class="form-nick">
-      <input type="text" id="nick" placeholder="Seu nick no jogo. Ex: SrFos" maxlength="30" autocomplete="off" required>
-      <button type="submit">Buscar</button>
-    </form>
+    <!-- Entrada: nick + PIN -->
+    <div id="area-entrar" class="caixa-entrar">
+      <span class="pokebola grande"></span>
+      <h2>Meus Pokémon</h2>
+      <p>Só você vê a sua lista. Entre com o seu nick do jogo e o seu PIN.</p>
+      <form id="form-entrar">
+        <label>Nick no jogo (OT)
+          <input type="text" id="nick" maxlength="30" autocomplete="off" required>
+        </label>
+        <label>PIN
+          <input type="password" id="pin" maxlength="20" autocomplete="off" required>
+        </label>
+        <label id="campo-inicial" hidden>Seu primeiro Pokémon (para recuperar o PIN)
+          <select id="inicial">
+            <option value="">Selecione...</option>
+            <option value="Bulbasaur">Bulbasaur (Planta / Veneno)</option>
+            <option value="Charmander">Charmander (Fogo)</option>
+            <option value="Squirtle">Squirtle (Água)</option>
+          </select>
+        </label>
+        <p id="aviso-nick" class="aviso-nick"></p>
+        <button type="submit" class="botao-principal">Entrar</button>
+        <p id="erro-entrar" class="erro-entrar"></p>
+        <a href="cadastro.html" class="link-suave">Esqueceu o PIN? Use "Esqueci meu PIN" na página de cadastro.</a>
+      </form>
+    </div>
 
-    <div id="resumo" class="resumo"></div>
+    <!-- Lista do treinador -->
+    <div id="area-lista" hidden>
+      <div class="barra-ferramentas">
+        <div>
+          <h2 class="titulo-secao">Olá, <span id="nome-treinador"></span>!</h2>
+          <p id="resumo" class="resumo"></p>
+        </div>
+        <div class="acoes-lista">
+          <a href="cadastro.html" class="botao-principal">+ Cadastrar</a>
+          <button type="button" id="sair" class="botao-secundario">Sair</button>
+        </div>
+      </div>
+      <input type="search" id="filtro-especie" class="busca" placeholder="Filtrar por espécie..." autocomplete="off">
+      <div id="grupos"></div>
+    </div>
 
-    <input type="text" id="filtro-especie" class="filtro-especie" placeholder="Filtrar por espécie. Ex: Growlithe" hidden>
-
-    <div id="grupos"></div>
   </section>
 
   <script src="comum.js"></script>

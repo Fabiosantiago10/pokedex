@@ -80,7 +80,10 @@ async function autenticar(nick, pin, inicial) {
       return { status: 400, erro: 'Escolha o seu primeiro Pokémon: ele é usado para recuperar o PIN se você esquecer' }
     }
     const salt = crypto.randomBytes(16).toString('hex')
-    const novo = { chave, nick, salt, pinHash: hashPin(pin, salt), criadoEm: new Date().toISOString() }
+    // Se o nick já tem Pokémon, mantém a grafia usada neles (ex: "SrFos" mesmo digitando "srfos")
+    const existente = pokemons.find(p => p.treinador.toLowerCase() === chave)
+    const grafia = existente ? existente.treinador : nick
+    const novo = { chave, nick: grafia, salt, pinHash: hashPin(pin, salt), criadoEm: new Date().toISOString() }
     guardarInicial(novo, inicial)
     db.treinadores.push(novo)
     await db.salvarTreinador(novo)
@@ -275,18 +278,21 @@ app.get('/api/status', function(req, res) {
   res.json({ mensagem: 'Servidor da Pokédex funcionando!', total: pokemons.length })
 })
 
-// Lista todos (filtros opcionais: ?treinador=Fabio&especie=Pikachu)
+// O que é público não diz de quem é o Pokémon: sem treinador e sem apelido.
+// Só o próprio treinador vê esses dados, em "Meus Pokémon" (com o PIN).
+function publico(pokemon) {
+  const { treinador, apelido, ...resto } = pokemon
+  return resto
+}
+
+// Lista todos (filtro opcional: ?especie=Pikachu)
 app.get('/api/pokemons', function(req, res) {
   let lista = pokemons
-  if (req.query.treinador) {
-    const t = String(req.query.treinador).toLowerCase()
-    lista = lista.filter(p => p.treinador.toLowerCase() === t)
-  }
   if (req.query.especie) {
     const e = String(req.query.especie).toLowerCase()
     lista = lista.filter(p => p.nome.toLowerCase() === e)
   }
-  res.json(lista)
+  res.json(lista.map(publico))
 })
 
 // Comparativo de uma espécie entre todos os treinadores
@@ -295,7 +301,22 @@ app.get('/api/ranking/:especie', function(req, res) {
   const media = ranking.length
     ? Math.round(ranking.reduce((t, p) => t + p.pontuacao, 0) / ranking.length)
     : 0
-  res.json({ especie: req.params.especie, total: ranking.length, media, ranking })
+  res.json({ especie: req.params.especie, total: ranking.length, media, ranking: ranking.map(publico) })
+})
+
+// "Meus Pokémon": com nick + PIN, devolve os Pokémon do treinador com todos os dados.
+// Se o nick ainda não tem PIN, cria (com o primeiro Pokémon, igual ao cadastro).
+app.post('/api/meus', async function(req, res) {
+  const nick = String((req.body && req.body.nick) || '').trim().slice(0, 30)
+  if (!nick) return res.status(400).json({ erros: ['Informe o seu nick do jogo'] })
+
+  const auth = await autenticar(nick, req.body.pin, req.body.inicial)
+  if (!auth.ok) return res.status(auth.status).json({ erros: [auth.erro] })
+
+  const chave = nick.toLowerCase()
+  const meus = pokemons.filter(p => p.treinador.toLowerCase() === chave)
+  const treinador = buscarTreinador(nick)
+  res.json({ nick: treinador.nick, pinCriado: Boolean(auth.novo), pokemons: meus })
 })
 
 // Nomes de todas as espécies (autocompletar do cadastro)
@@ -366,7 +387,7 @@ app.post('/api/pokemons', async function(req, res) {
     comparacao: {
       posicao: ranking.findIndex(p => p.id === pokemon.id) + 1,
       total: ranking.length,
-      melhorAnterior: anteriores[0] || null
+      melhorAnterior: anteriores[0] ? publico(anteriores[0]) : null
     }
   })
 })
@@ -374,9 +395,8 @@ app.post('/api/pokemons', async function(req, res) {
 // Diz se o nick já tem PIN, para o formulário mostrar "crie um PIN" ou "digite seu PIN"
 app.get('/api/treinadores/:nick', function(req, res) {
   const nick = String(req.params.nick).trim()
-  const temPokemons = pokemons.some(p => p.treinador.toLowerCase() === nick.toLowerCase())
   const treinador = buscarTreinador(nick)
-  res.json({ temPin: Boolean(treinador), temInicial: Boolean(treinador && treinador.inicialHash), temPokemons })
+  res.json({ temPin: Boolean(treinador), temInicial: Boolean(treinador && treinador.inicialHash) })
 })
 
 // "Esqueci meu PIN": quem acerta o primeiro Pokémon do nick define um PIN novo
@@ -410,11 +430,11 @@ app.post('/api/treinadores/recuperar', async function(req, res) {
   res.json({ ok: true })
 })
 
-// Um Pokémon só (usado pela tela de edição)
+// Um Pokémon só (sem dados do dono; a edição usa "Meus Pokémon", que pede o PIN)
 app.get('/api/pokemons/:id', function(req, res) {
   const pokemon = pokemons.find(p => p.id === req.params.id)
   if (!pokemon) return res.status(404).json({ erros: ['Pokémon não encontrado'] })
-  res.json(pokemon)
+  res.json(publico(pokemon))
 })
 
 // Edita um Pokémon. Só o mesmo treinador que cadastrou pode editar.

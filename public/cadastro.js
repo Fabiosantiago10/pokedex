@@ -212,6 +212,7 @@ async function recuperarPin() {
     }
     // Já deixa o PIN novo no campo, para continuar o cadastro
     campoPin.value = novoPin
+    if (lerSessao()) salvarSessao(nick, novoPin)  // a sessão de "Meus Pokémon" passa a usar o PIN novo
     fecharRecuperacao()
     statusPin.classList.remove('pin-novo')
     statusPin.textContent = `🔐 PIN do nick ${nick} trocado! Ele já está preenchido acima.`
@@ -304,6 +305,17 @@ function mostrarPopulares(populares) {
   })
 }
 
+// Mostra a imagem do Pokémon escolhido ao lado do nome
+function mostrarPreview(dados) {
+  const img = document.getElementById('preview-especie')
+  const url = urlImagem({ numero: dados.numero })
+  img.hidden = !url
+  if (url) {
+    img.src = url
+    img.alt = dados.nome
+  }
+}
+
 async function carregarEspecie(nome) {
   if (nome.toLowerCase() === ultimaBusca) return
   ultimaBusca = nome.toLowerCase()
@@ -315,6 +327,7 @@ async function carregarEspecie(nome) {
       statusEspecie.textContent = `"${nome}" não é um Pokémon. Confira o nome ou use o número da Pokédex.`
       statusEspecie.classList.add('status-erro')
       campoNome.classList.add('invalido')
+      document.getElementById('preview-especie').hidden = true
       return
     }
     statusEspecie.classList.remove('status-erro')
@@ -326,6 +339,7 @@ async function carregarEspecie(nome) {
     if (campoNome.value.trim().toLowerCase() !== nome.toLowerCase()) return
 
     especieCarregada = dados.nome
+    mostrarPreview(dados)
     baseAtual = dados.base || null
     atualizarProjecao()
     campoNome.value = dados.nome
@@ -515,8 +529,7 @@ async function salvarPokemon() {
     if (idEdicao) {
       divResultado.innerHTML = `
         <div class="comparacao-melhor">
-          ✏️ Alterações salvas! ${nomeSeguro} agora tem ${salvo.pontuacao}/100
-          e está em ${comp.posicao}º de ${comp.total} da espécie. ${link}
+          ✏️ Alterações salvas! ${nomeSeguro} agora está em ${comp.posicao}º de ${comp.total} da espécie. ${link}
         </div>
       `
       divResultado.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -526,22 +539,19 @@ async function salvarPokemon() {
     if (!comp.melhorAnterior) {
       divResultado.innerHTML = `
         <div class="comparacao-melhor">
-          ✅ ${nomeSeguro} cadastrado! Pontuação: ${salvo.pontuacao}/100.
-          É o primeiro ${nomeSeguro} da base! ${link}
+          ✅ ${nomeSeguro} cadastrado! É o primeiro ${nomeSeguro} da base! ${link}
         </div>
       `
     } else if (comp.posicao === 1) {
       divResultado.innerHTML = `
         <div class="comparacao-melhor">
-          🏆 Seu ${nomeSeguro} é o mais forte da base! Pontuação: ${salvo.pontuacao}/100
-          (o melhor anterior era de ${escaparHtml(comp.melhorAnterior.treinador)}, com ${comp.melhorAnterior.pontuacao}/100). ${link}
+          🏆 Seu ${nomeSeguro} é o mais forte da base, entre ${comp.total}! ${link}
         </div>
       `
     } else {
       divResultado.innerHTML = `
         <div class="comparacao-pior">
-          📊 Seu ${nomeSeguro} ficou em ${comp.posicao}º de ${comp.total}. Pontuação: ${salvo.pontuacao}/100
-          (o melhor é de ${escaparHtml(comp.melhorAnterior.treinador)}, com ${comp.melhorAnterior.pontuacao}/100). ${link}
+          📊 Seu ${nomeSeguro} ficou em ${comp.posicao}º de ${comp.total} da espécie. ${link}
         </div>
       `
     }
@@ -593,13 +603,21 @@ async function iniciarEdicao() {
   // O dono não muda na edição: o servidor confere esse nome
   campoTreinador.readOnly = true
 
+  // Os dados completos (com apelido) só vêm com nick + PIN, pela sessão de "Meus Pokémon"
+  const sessao = lerSessao()
   try {
-    const resposta = await fetch('/api/pokemons/' + encodeURIComponent(idEdicao))
+    if (!sessao) throw new Error('sem sessão')
+    const resposta = await fetch('/api/meus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nick: sessao.nick, pin: sessao.pin })
+    })
     if (!resposta.ok) throw new Error(resposta.status)
-    const pokemon = await resposta.json()
+    const pokemon = (await resposta.json()).pokemons.find(p => p.id === idEdicao)
+    if (!pokemon) throw new Error('não é deste treinador')
     preencherFormulario(pokemon)
+    campoPin.value = sessao.pin
     verificarPinDoNick()
-    campoPin.focus()
     // Carrega habilidades e ataques da espécie para o autocompletar
     carregarEspecie(pokemon.nome)
   } catch (erro) {
@@ -608,12 +626,19 @@ async function iniciarEdicao() {
     const aviso = document.createElement('div')
     aviso.className = 'comparacao-pior'
     aviso.innerHTML = `
-      ⚠️ Não foi possível carregar os dados deste Pokémon para edição.
-      Nada foi apagado. Se o servidor foi atualizado agora, reinicie ele (Ctrl+C e <code>npm start</code>)
-      e recarregue esta página. <a href="index.html">Voltar para a Pokédex</a>
+      ⚠️ Para editar, entre primeiro em <a href="meus.html">Meus Pokémon</a> com o seu nick e PIN
+      e clique em "Editar" no Pokémon. Nada foi apagado.
     `
     document.querySelector('.subtitulo').after(aviso)
     console.error(erro)
+  }
+}
+
+// Cadastro novo com a sessão aberta: nick e PIN já vêm preenchidos
+if (!idEdicao) {
+  const sessao = lerSessao()
+  if (sessao && sessao.nick.toLowerCase() === campoTreinador.value.trim().toLowerCase()) {
+    campoPin.value = sessao.pin
   }
 }
 
@@ -645,6 +670,7 @@ function limparFormulario() {
     'Escolha o Pokémon acima para ver só os ataques que ele pode aprender.'
   statusEspecie.textContent = ''
   statusEspecie.classList.remove('status-erro')
+  document.getElementById('preview-especie').hidden = true
   document.querySelector('.total-ev').classList.remove('total-invalido')
   atualizarTotalEV()
   atualizarTotalIV()
