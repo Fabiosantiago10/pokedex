@@ -123,104 +123,39 @@ function atualizarTotalIV() {
   document.getElementById('total-iv').textContent = total
 }
 
-// Lembra o nome do treinador para não precisar digitar de novo
+// ---------- Treinador logado ----------
+// O cadastro só funciona com o login de "Meus Pokémon": nick e PIN vêm da sessão desta aba
+const sessaoAtual = lerSessao()
+if (!sessaoAtual) location.replace('meus.html')
+
 const campoTreinador = document.getElementById('treinador')
-try {
-  campoTreinador.value = localStorage.getItem('treinador') || ''
-} catch (e) {}
-
-// ---------- PIN do nick ----------
-// O PIN não é guardado no navegador; fica só no campo enquanto a página estiver aberta
 const campoPin = document.getElementById('pin')
-const statusPin = document.getElementById('status-pin')
-
 const campoInicial = document.getElementById('inicial')
-let infoNick = null  // { temPin, temInicial } do nick digitado
+let infoNick = null  // { temPin, temInicial } do treinador logado
 
-async function verificarPinDoNick() {
-  const nick = campoTreinador.value.trim()
-  if (!nick) return
+if (sessaoAtual) {
+  campoTreinador.value = sessaoAtual.nick
+  campoPin.value = sessaoAtual.pin
+  document.getElementById('nick-logado').textContent = sessaoAtual.nick
+}
+
+function sair() {
+  encerrarSessao()
+  location.href = 'meus.html'
+}
+
+// Quem criou o PIN antes da recuperação existir ainda pode escolher o primeiro Pokémon
+async function verificarInicial() {
+  if (!sessaoAtual) return
   try {
-    const resposta = await fetch('/api/treinadores/' + encodeURIComponent(nick))
-    const info = await resposta.json()
-    if (campoTreinador.value.trim() !== nick) return  // o nick mudou enquanto carregava
-    infoNick = info
-    statusPin.classList.toggle('pin-novo', !info.temPin)
-    statusPin.textContent = info.temPin
-      ? `Digite o PIN do nick ${nick}.`
-      : `O nick ${nick} ainda não tem PIN: o que você digitar agora vira o PIN dele. Guarde bem!`
-    // O primeiro Pokémon é pedido ao criar o PIN (ou para quem ainda não escolheu)
-    document.getElementById('campo-inicial').hidden = info.temPin && info.temInicial
-    document.getElementById('link-esqueci').hidden = !info.temPin
+    infoNick = await (await fetch('/api/treinadores/' + encodeURIComponent(sessaoAtual.nick))).json()
+    document.getElementById('campo-inicial').hidden = infoNick.temInicial
   } catch (erro) {
     console.error(erro)
   }
 }
 
-campoTreinador.addEventListener('change', verificarPinDoNick)
-verificarPinDoNick()
-
-// ---------- Esqueci meu PIN ----------
-function abrirRecuperacao() {
-  const nick = campoTreinador.value.trim()
-  if (!nick) {
-    alert('Digite o seu nick primeiro.')
-    return
-  }
-  if (infoNick && infoNick.temPin && !infoNick.temInicial) {
-    alert('Esse nick não escolheu um primeiro Pokémon quando criou o PIN, então não dá para recuperar por aqui.')
-    return
-  }
-  document.getElementById('recuperar-nick').textContent = nick
-  document.getElementById('recuperar-resultado').innerHTML = ''
-  const painel = document.getElementById('painel-recuperar')
-  painel.hidden = false
-  painel.scrollIntoView({ behavior: 'smooth', block: 'center' })
-}
-
-function fecharRecuperacao() {
-  document.getElementById('painel-recuperar').hidden = true
-  document.getElementById('novo-pin').value = ''
-  document.querySelectorAll('input[name="recuperar-inicial"]').forEach(r => { r.checked = false })
-}
-
-async function recuperarPin() {
-  const nick = campoTreinador.value.trim()
-  const escolhido = document.querySelector('input[name="recuperar-inicial"]:checked')
-  const novoPin = document.getElementById('novo-pin').value
-  const divResultado = document.getElementById('recuperar-resultado')
-
-  if (!escolhido) {
-    divResultado.innerHTML = '<p class="status-erro-texto">Escolha o seu primeiro Pokémon.</p>'
-    return
-  }
-  if (novoPin.length < 4) {
-    divResultado.innerHTML = '<p class="status-erro-texto">O novo PIN deve ter de 4 a 20 caracteres.</p>'
-    return
-  }
-
-  try {
-    const resposta = await fetch('/api/treinadores/recuperar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nick, inicial: escolhido.value, novoPin })
-    })
-    const resultado = await resposta.json()
-    if (!resposta.ok) {
-      divResultado.innerHTML = `<p class="status-erro-texto">${escaparHtml(resultado.erros.join(' '))}</p>`
-      return
-    }
-    // Já deixa o PIN novo no campo, para continuar o cadastro
-    campoPin.value = novoPin
-    if (lerSessao()) salvarSessao(nick, novoPin)  // a sessão de "Meus Pokémon" passa a usar o PIN novo
-    fecharRecuperacao()
-    statusPin.classList.remove('pin-novo')
-    statusPin.textContent = `🔐 PIN do nick ${nick} trocado! Ele já está preenchido acima.`
-  } catch (erro) {
-    divResultado.innerHTML = '<p class="status-erro-texto">Não foi possível falar com o servidor.</p>'
-    console.error(erro)
-  }
-}
+verificarInicial()
 
 // ---------- Autocompletar com dados da PokéAPI ----------
 const campoNome = document.getElementById('nome')
@@ -422,18 +357,12 @@ async function salvarPokemon() {
   const treinador = campoTreinador.value.trim()
   const nome = document.getElementById('nome').value.trim()
 
-  if (!treinador || !nome) {
-    alert('Preencha pelo menos o seu nick do jogo e o nome do Pokémon!')
+  if (!treinador || !campoPin.value) {
+    location.replace('meus.html')  // sem login não dá para cadastrar
     return
   }
-  if (campoPin.value.length < 4) {
-    alert('Digite o PIN do seu nick (4 a 20 caracteres).')
-    campoPin.focus()
-    return
-  }
-  if (infoNick && !infoNick.temPin && !campoInicial.value) {
-    alert('Escolha o seu primeiro Pokémon. Ele é usado para recuperar o PIN se você esquecer.')
-    campoInicial.focus()
+  if (!nome) {
+    alert('Preencha pelo menos o nome do Pokémon!')
     return
   }
 
@@ -500,6 +429,16 @@ async function salvarPokemon() {
 
     const resultado = await resposta.json()
 
+    // PIN não confere mais (ex: trocado em outro lugar): pede para entrar de novo
+    if (resposta.status === 401) {
+      encerrarSessao()
+      divResultado.innerHTML = `
+        <div class="comparacao-pior">
+          ⚠️ Seu login expirou. <a href="meus.html">Entre de novo em Meus Pokémon</a> para continuar. Os dados digitados aqui não foram salvos.
+        </div>
+      `
+      return
+    }
     if (!resposta.ok) {
       divResultado.innerHTML = `
         <div class="comparacao-pior">
@@ -510,16 +449,8 @@ async function salvarPokemon() {
       return
     }
 
-    // Só guarda o nick depois que o servidor aceitou o PIN
-    salvarTreinador(treinador)
-    // Agora o nick tem PIN (e o primeiro Pokémon, se foi escolhido): esconde o campo e mostra "Esqueci"
-    infoNick = { temPin: true, temInicial: Boolean((infoNick && infoNick.temInicial) || campoInicial.value) }
-    document.getElementById('campo-inicial').hidden = infoNick.temInicial
-    document.getElementById('link-esqueci').hidden = false
-    if (resultado.pinCriado) {
-      statusPin.classList.remove('pin-novo')
-      statusPin.textContent = `🔐 PIN criado para o nick ${treinador}. Ele será pedido para cadastrar e editar.`
-    }
+    // Se o primeiro Pokémon foi escolhido agora, o campo não precisa mais aparecer
+    if (campoInicial.value) document.getElementById('campo-inicial').hidden = true
 
     const salvo = resultado.pokemon
     const comp = resultado.comparacao
@@ -597,11 +528,11 @@ function preencherFormulario(p) {
 async function iniciarEdicao() {
   document.querySelector('.formulario-container h2').textContent = 'Editar Pokémon'
   document.querySelector('.subtitulo').textContent =
-    'Corrija os dados e salve. A pontuação e o ranking são recalculados.'
+    'Corrija os dados e salve. A posição no ranking é recalculada.'
   const botao = document.querySelector('.btn-salvar')
   botao.textContent = 'Salvar alterações'
-  // O dono não muda na edição: o servidor confere esse nome
-  campoTreinador.readOnly = true
+  // Editando não é "Cadastrar": nenhuma das abas fica marcada
+  document.getElementById('aba-cadastrar').classList.remove('ativa')
 
   // Os dados completos (com apelido) só vêm com nick + PIN, pela sessão de "Meus Pokémon"
   const sessao = lerSessao()
@@ -617,7 +548,6 @@ async function iniciarEdicao() {
     if (!pokemon) throw new Error('não é deste treinador')
     preencherFormulario(pokemon)
     campoPin.value = sessao.pin
-    verificarPinDoNick()
     // Carrega habilidades e ataques da espécie para o autocompletar
     carregarEspecie(pokemon.nome)
   } catch (erro) {
@@ -631,14 +561,6 @@ async function iniciarEdicao() {
     `
     document.querySelector('.subtitulo').after(aviso)
     console.error(erro)
-  }
-}
-
-// Cadastro novo com a sessão aberta: nick e PIN já vêm preenchidos
-if (!idEdicao) {
-  const sessao = lerSessao()
-  if (sessao && sessao.nick.toLowerCase() === campoTreinador.value.trim().toLowerCase()) {
-    campoPin.value = sessao.pin
   }
 }
 

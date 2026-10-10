@@ -1046,3 +1046,66 @@ table.comparativo .selo {
     font-size: 12px;
   }
 }
+
+/* ---------- Opções do treinador logado (Meus Pokémon e Cadastro) ---------- */
+.abas-treinador {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  background: var(--cartao);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+}
+
+.logado-como {
+  font-size: 14px;
+  color: var(--texto-suave);
+}
+
+.logado-como strong {
+  color: var(--texto);
+}
+
+.abas-botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.aba {
+  display: inline-block;
+  padding: 9px 16px;
+  border: 2px solid var(--borda);
+  border-radius: 999px;
+  background: white;
+  color: var(--texto);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.aba:hover {
+  border-color: var(--vermelho);
+}
+
+.aba.ativa {
+  border-color: var(--vermelho);
+  background: var(--vermelho);
+  color: white;
+}
+
+.aba-sair {
+  color: var(--texto-suave);
+}
+
+@media (max-width: 600px) {
+  .abas-botoes { width: 100%; }
+  .aba { flex: 1; text-align: center; padding: 9px 10px; }
+}

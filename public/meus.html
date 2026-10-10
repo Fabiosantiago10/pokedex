@@ -19,7 +19,6 @@
       <a href="index.html" class="marca"><span class="pokebola"></span> Minha Pokédex</a>
       <nav>
         <a href="index.html">Pokédex</a>
-        <a href="cadastro.html">Cadastrar</a>
         <a href="meus.html" class="ativo">Meus Pokémon</a>
       </nav>
     </div>
@@ -50,22 +49,40 @@
         <p id="aviso-nick" class="aviso-nick"></p>
         <button type="submit" class="botao-principal">Entrar</button>
         <p id="erro-entrar" class="erro-entrar"></p>
-        <a href="cadastro.html" class="link-suave">Esqueceu o PIN? Use "Esqueci meu PIN" na página de cadastro.</a>
+        <button type="button" class="link-suave" onclick="abrirRecuperacao()">Esqueci meu PIN</button>
       </form>
+
+      <!-- Esqueci meu PIN -->
+      <div id="painel-recuperar" class="painel-recuperar" hidden>
+        <h3>Recuperar PIN</h3>
+        <p>Digite o seu nick acima, escolha o primeiro Pokémon que você informou ao criar o PIN e defina um PIN novo.</p>
+        <div class="opcoes-iniciais">
+          <label><input type="radio" name="recuperar-inicial" value="Bulbasaur"> Bulbasaur</label>
+          <label><input type="radio" name="recuperar-inicial" value="Charmander"> Charmander</label>
+          <label><input type="radio" name="recuperar-inicial" value="Squirtle"> Squirtle</label>
+        </div>
+        <label class="campo-novo-pin">Novo PIN
+          <input type="password" id="novo-pin" maxlength="20" autocomplete="off">
+        </label>
+        <div class="acoes-recuperar">
+          <button type="button" class="botao-principal" onclick="recuperarPin()">Trocar PIN</button>
+          <button type="button" class="link-suave" onclick="fecharRecuperacao()">Cancelar</button>
+        </div>
+        <p id="recuperar-resultado" class="erro-entrar"></p>
+      </div>
     </div>
 
     <!-- Lista do treinador -->
     <div id="area-lista" hidden>
-      <div class="barra-ferramentas">
-        <div>
-          <h2 class="titulo-secao">Olá, <span id="nome-treinador"></span>!</h2>
-          <p id="resumo" class="resumo"></p>
-        </div>
-        <div class="acoes-lista">
-          <a href="cadastro.html" class="botao-principal">+ Cadastrar</a>
-          <button type="button" id="sair" class="botao-secundario">Sair</button>
+      <div class="abas-treinador">
+        <span class="logado-como">Treinador: <strong id="nome-treinador"></strong></span>
+        <div class="abas-botoes">
+          <a href="meus.html" class="aba ativa">📋 Meus Pokémon cadastrados</a>
+          <a href="cadastro.html" class="aba">➕ Cadastrar Pokémon</a>
+          <button type="button" id="sair" class="aba aba-sair">Sair</button>
         </div>
       </div>
+      <p id="resumo" class="resumo"></p>
       <input type="search" id="filtro-especie" class="busca" placeholder="Filtrar por espécie..." autocomplete="off">
       <div id="grupos"></div>
     </div>

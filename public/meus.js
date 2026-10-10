@@ -129,6 +129,60 @@ document.getElementById('sair').addEventListener('click', function() {
   document.getElementById('area-entrar').hidden = false
 })
 
+// ---------- Esqueci meu PIN ----------
+function abrirRecuperacao() {
+  document.getElementById('recuperar-resultado').textContent = ''
+  document.getElementById('painel-recuperar').hidden = false
+  if (!campoNick.value.trim()) campoNick.focus()
+}
+
+function fecharRecuperacao() {
+  document.getElementById('painel-recuperar').hidden = true
+  document.getElementById('novo-pin').value = ''
+  document.querySelectorAll('input[name="recuperar-inicial"]').forEach(r => { r.checked = false })
+}
+
+async function recuperarPin() {
+  const nick = campoNick.value.trim()
+  const escolhido = document.querySelector('input[name="recuperar-inicial"]:checked')
+  const novoPin = document.getElementById('novo-pin').value
+  const resultado = document.getElementById('recuperar-resultado')
+
+  if (!nick) {
+    resultado.textContent = 'Digite o seu nick no campo acima.'
+    campoNick.focus()
+    return
+  }
+  if (!escolhido) {
+    resultado.textContent = 'Escolha o seu primeiro Pokémon.'
+    return
+  }
+  if (novoPin.length < 4) {
+    resultado.textContent = 'O novo PIN deve ter de 4 a 20 caracteres.'
+    return
+  }
+
+  try {
+    const resposta = await fetch('/api/treinadores/recuperar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nick, inicial: escolhido.value, novoPin })
+    })
+    const dados = await resposta.json()
+    if (!resposta.ok) {
+      resultado.textContent = dados.erros.join(' ')
+      return
+    }
+    // PIN trocado: já entra com ele
+    campoPin.value = novoPin
+    fecharRecuperacao()
+    entrar(nick, novoPin, '')
+  } catch (erro) {
+    resultado.textContent = 'Não foi possível falar com o servidor.'
+    console.error(erro)
+  }
+}
+
 campoNick.addEventListener('change', verificarNick)
 campoFiltro.addEventListener('input', renderizar)
 

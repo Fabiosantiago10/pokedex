@@ -19,13 +19,22 @@
       <a href="index.html" class="marca"><span class="pokebola"></span> Minha Pokédex</a>
       <nav>
         <a href="index.html">Pokédex</a>
-        <a href="cadastro.html" class="ativo">Cadastrar</a>
-        <a href="meus.html">Meus Pokémon</a>
+        <a href="meus.html" class="ativo">Meus Pokémon</a>
       </nav>
     </div>
   </header>
 
   <main class="formulario-container">
+
+    <!-- Opções do treinador logado (as mesmas da página Meus Pokémon) -->
+    <div class="abas-treinador">
+      <span class="logado-como">Treinador: <strong id="nick-logado"></strong></span>
+      <div class="abas-botoes">
+        <a href="meus.html" class="aba">📋 Meus Pokémon cadastrados</a>
+        <a href="cadastro.html" class="aba ativa" id="aba-cadastrar">➕ Cadastrar Pokémon</a>
+        <button type="button" class="aba aba-sair" onclick="sair()">Sair</button>
+      </div>
+    </div>
 
     <h2>Cadastrar Pokémon</h2>
     <p class="subtitulo">Preencha os dados do seu Pokémon. Ele entra na base compartilhada e é comparado com os de outros treinadores da mesma espécie!</p>
@@ -34,16 +43,9 @@
     <div class="secao-form">
       <h3>Dados Gerais</h3>
       <div class="campos">
-        <div class="campo">
-          <label>Seu nick</label>
-          <input type="text" id="treinador" maxlength="30">
-        </div>
-        <div class="campo">
-          <label>PIN do nick</label>
-          <input type="password" id="pin" placeholder="4 a 20 caracteres" maxlength="20" autocomplete="off">
-          <small id="status-pin" class="status-pin">Protege os seus Pokémon: só quem sabe o PIN cadastra e edita com esse nick.</small>
-          <button type="button" id="link-esqueci" class="link-esqueci" onclick="abrirRecuperacao()" hidden>Esqueci meu PIN</button>
-        </div>
+        <!-- Preenchidos pelo login de "Meus Pokémon" -->
+        <input type="hidden" id="treinador">
+        <input type="hidden" id="pin">
         <div class="campo" id="campo-inicial" hidden>
           <label>Seu primeiro Pokémon</label>
           <select id="inicial">
@@ -172,25 +174,6 @@
         </div>
       </div>
 
-      <!-- Esqueci meu PIN -->
-      <div id="painel-recuperar" class="painel-recuperar" hidden>
-        <h4>Recuperar PIN do nick <span id="recuperar-nick"></span></h4>
-        <p>Escolha o primeiro Pokémon que você informou ao criar o PIN e defina um PIN novo.</p>
-        <div class="opcoes-iniciais">
-          <label><input type="radio" name="recuperar-inicial" value="Bulbasaur"> Bulbasaur</label>
-          <label><input type="radio" name="recuperar-inicial" value="Charmander"> Charmander</label>
-          <label><input type="radio" name="recuperar-inicial" value="Squirtle"> Squirtle</label>
-        </div>
-        <div class="campo">
-          <label>Novo PIN</label>
-          <input type="password" id="novo-pin" maxlength="20" autocomplete="off">
-        </div>
-        <div class="acoes-recuperar">
-          <button type="button" class="btn-calcular" onclick="recuperarPin()">Trocar PIN</button>
-          <button type="button" class="link-esqueci" onclick="fecharRecuperacao()">Cancelar</button>
-        </div>
-        <div id="recuperar-resultado"></div>
-      </div>
     </div>
 
     <!-- Como reconhecer o Pokémon no jogo -->
