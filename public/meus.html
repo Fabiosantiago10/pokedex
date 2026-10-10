@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meus Pokémon</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="meus.css">
+</head>
+
+<body>
+
+  <header>
+    <h1>Minha Pokédex</h1>
+    <nav>
+      <a href="index.html">Ver Pokédex</a>
+      <a href="cadastro.html">Cadastrar Pokémon</a>
+      <a href="meus.html" class="ativo">Meus Pokémon</a>
+    </nav>
+  </header>
+
+  <section class="meus-container">
+    <h2>Meus Pokémon</h2>
+    <p class="meus-subtitulo">Digite o seu nick do jogo (o mesmo usado no cadastro) para ver os seus Pokémon, do mais forte para o mais fraco em cada espécie.</p>
+
+    <form id="form-nick" class="form-nick">
+      <input type="text" id="nick" placeholder="Seu nick no jogo. Ex: SrFos" maxlength="30" autocomplete="off" required>
+      <button type="submit">Buscar</button>
+    </form>
+
+    <div id="resumo" class="resumo"></div>
+
+    <input type="text" id="filtro-especie" class="filtro-especie" placeholder="Filtrar por espécie. Ex: Growlithe" hidden>
+
+    <div id="grupos"></div>
+  </section>
+
+  <script src="comum.js"></script>
+  <script src="meus.js"></script>
+
+</body>
+
+</html>

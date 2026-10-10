@@ -1,0 +1,470 @@
+/* Reset e base */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f0f0;
+  margin: 0;
+  padding: 0;
+}
+
+/* Header */
+header {
+  background-color: #cc0000;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+
+header h1 {
+  color: white;
+  font-size: 36px;
+  margin: 0 0 10px 0;
+}
+
+nav {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.2);
+  font-size: 14px;
+}
+
+nav a.ativo {
+  background: white;
+  color: #cc0000;
+  font-weight: bold;
+}
+
+/* TOP 5 */
+.top5-container {
+  max-width: 900px;
+  margin: 30px auto 10px auto;
+  padding: 0 20px;
+}
+
+.top5-titulo {
+  font-size: 22px;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.top5-lista {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.top5-card {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+  border-top: 5px solid #ccc;
+  position: relative;
+}
+
+.top5-posicao {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #cc0000;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top5-posicao.ouro   { background: #FFD700; color: #333; }
+.top5-posicao.prata  { background: #C0C0C0; color: #333; }
+.top5-posicao.bronze { background: #CD7F32; color: white; }
+
+.top5-nome {
+  font-weight: bold;
+  font-size: 14px;
+  margin: 8px 0 4px 0;
+}
+
+.top5-pontuacao {
+  font-size: 22px;
+  font-weight: bold;
+  color: #cc0000;
+}
+
+.top5-pontuacao span {
+  font-size: 12px;
+  color: #999;
+  font-weight: normal;
+}
+
+.top5-vazio {
+  color: #aaa;
+  font-size: 14px;
+  padding: 20px;
+  text-align: center;
+  grid-column: span 5;
+}
+
+/* POKÉDEX */
+.pokedex-container {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 0 20px;
+}
+
+.pokedex-titulo {
+  font-size: 22px;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+/* Busca */
+.controles {
+  margin-bottom: 24px;
+}
+
+#busca {
+  width: 100%;
+  padding: 10px 16px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+}
+
+#busca:focus {
+  border-color: #cc0000;
+}
+
+/* Cards da lista */
+main {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+  border-top: 6px solid #ccc;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.card:hover {
+  transform: scale(1.03);
+}
+
+.card h2 {
+  margin: 4px 0 8px 0;
+  font-size: 18px;
+}
+
+.numero {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  color: white;
+  background-color: #888;
+  margin-right: 4px;
+  margin-bottom: 8px;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: #666;
+}
+
+.iv-total {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #888;
+}
+
+.pontuacao-card {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #cc0000;
+}
+
+/* Modal de detalhe */
+#detalhe {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+#detalhe-conteudo {
+  background: white;
+  border-radius: 16px;
+  padding: 30px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.detalhe-header {
+  margin-bottom: 20px;
+}
+
+.detalhe-header h2 {
+  font-size: 28px;
+  margin: 4px 0;
+}
+
+.detalhe-secoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.secao h3 {
+  margin: 0 0 10px 0;
+  font-size: 15px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.total-badge {
+  font-size: 12px;
+  background: #eee;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: normal;
+  color: #555;
+}
+
+.secao table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.secao table tr td {
+  padding: 4px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.secao table tr td:first-child {
+  color: #777;
+  width: 50%;
+}
+
+.movimento {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.pontuacao-detalhe {
+  background: #fff8f8;
+  border: 2px solid #cc0000;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.pontuacao-detalhe span {
+  font-size: 32px;
+  font-weight: bold;
+  color: #cc0000;
+}
+
+.pontuacao-detalhe p {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #999;
+}
+
+/* Filtros */
+.controles {
+  display: flex;
+  gap: 12px;
+}
+
+#busca {
+  flex: 1;
+}
+
+.treinador {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.top5-card {
+  cursor: pointer;
+}
+
+/* Comparativo entre treinadores */
+.secao-comparativo {
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+.comparativo-resumo,
+.comparativo-vazio {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 10px 0;
+}
+
+table.comparativo {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: center;
+}
+
+table.comparativo th {
+  background: #f5f5f5;
+  color: #555;
+  font-weight: normal;
+  font-size: 11px;
+  padding: 6px 4px;
+}
+
+table.comparativo td {
+  padding: 6px 4px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+table.comparativo tr.atual td {
+  background: #fff3f3;
+  font-weight: bold;
+}
+
+table.comparativo td.perfeito {
+  color: #1a8f3c;
+  font-weight: bold;
+}
+
+@media (max-width: 700px) {
+  .top5-lista { grid-template-columns: repeat(2, 1fr); gap: 20px 12px; }
+  .detalhe-secoes { grid-template-columns: 1fr; }
+  .controles { flex-direction: column; }
+}
+
+.btn-editar {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 14px;
+  border: 2px solid #cc0000;
+  border-radius: 20px;
+  color: #cc0000;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.btn-editar:hover {
+  background: #cc0000;
+  color: white;
+}
+
+/* Selos de variante */
+.selo {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: bold;
+  margin: 0 4px 6px 0;
+  white-space: nowrap;
+}
+
+.selo-alfa  { background: #ffe5e5; color: #b00000; border: 1px solid #f2a0a0; }
+.selo-shiny { background: #fff7d6; color: #8a6d00; border: 1px solid #f0d870; }
+
+table.comparativo .selo {
+  margin: 0 0 0 4px;
+  padding: 1px 6px;
+  font-size: 10px;
+}
+
+/* Identificação no jogo */
+.identificacao {
+  font-size: 12px;
+  color: #555;
+  background: #f5f5f5;
+  border-radius: 6px;
+  padding: 3px 6px;
+  margin-bottom: 8px;
+}
+
+table.comparativo td.col-identificacao {
+  text-align: left;
+  font-size: 12px;
+}
+
+
+/* Alternar stats atuais / No Lv. 100 */
+.alternar-stats {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.alternar-stats button {
+  flex: 1;
+  padding: 5px 8px;
+  border: 2px solid #ddd;
+  background: white;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.alternar-stats button.ativo {
+  border-color: #cc0000;
+  background: #cc0000;
+  color: white;
+  font-weight: bold;
+}
+
+.nota-projecao {
+  font-size: 11px;
+  color: #999;
+  margin: 4px 0 8px 0;
+}

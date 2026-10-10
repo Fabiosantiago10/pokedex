@@ -1,0 +1,30 @@
+{
+  "name": "projeto-pokemon",
+  "version": "1.0.0",
+  "description": "Pokédex colaborativa: cadastre seus Pokémon (IVs, EVs, stats) e compare com os de outros treinadores",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "migrar": "node migrar-para-mongo.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fabiosantiago10/pokedex.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Fabiosantiago10/pokedex/issues"
+  },
+  "homepage": "https://github.com/Fabiosantiago10/pokedex#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "mongodb": "^7.7.0"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

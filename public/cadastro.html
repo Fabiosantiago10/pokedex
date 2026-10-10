@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastrar Pokémon</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="cadastro.css">
+</head>
+
+<body>
+
+  <header>
+    <h1>Minha Pokédex</h1>
+    <nav>
+      <a href="index.html">Ver Pokédex</a>
+      <a href="cadastro.html" class="ativo">Cadastrar Pokémon</a>
+      <a href="meus.html">Meus Pokémon</a>
+    </nav>
+  </header>
+
+  <main class="formulario-container">
+
+    <h2>Cadastrar Pokémon</h2>
+    <p class="subtitulo">Preencha os dados do seu Pokémon. Ele entra na base compartilhada e é comparado com os de outros treinadores da mesma espécie!</p>
+
+    <!-- SEÇÃO 1: Dados gerais -->
+    <div class="secao-form">
+      <h3>Dados Gerais</h3>
+      <div class="campos">
+        <div class="campo">
+          <label>Seu nick no jogo (OT)</label>
+          <input type="text" id="treinador" placeholder="Ex: SrFos" maxlength="30">
+        </div>
+        <div class="campo">
+          <label>PIN do nick</label>
+          <input type="password" id="pin" placeholder="4 a 20 caracteres" maxlength="20" autocomplete="off">
+          <small id="status-pin" class="status-pin">Protege os seus Pokémon: só quem sabe o PIN cadastra e edita com esse nick.</small>
+        </div>
+        <div class="campo">
+          <label>Número na Pokédex</label>
+          <input type="text" id="numero" placeholder="Ex: 059" inputmode="numeric" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label>Nome do Pokémon</label>
+          <input type="text" id="nome" placeholder="Comece a digitar: Pika..." list="lista-especies" autocomplete="off">
+          <small id="status-especie" class="status-especie"></small>
+        </div>
+        <div class="campo">
+          <label>Tipo Principal</label>
+          <select id="tipo1">
+            <option value="">Selecione...</option>
+            <option value="Normal">Normal</option>
+            <option value="Flying">Flying</option>
+            <option value="Electric">Electric</option>
+            <option value="Fire">Fire</option>
+            <option value="Water">Water</option>
+            <option value="Grass">Grass</option>
+            <option value="Poison">Poison</option>
+            <option value="Bug">Bug</option>
+            <option value="Rock">Rock</option>
+            <option value="Ground">Ground</option>
+            <option value="Psychic">Psychic</option>
+            <option value="Ice">Ice</option>
+            <option value="Dragon">Dragon</option>
+            <option value="Dark">Dark</option>
+            <option value="Steel">Steel</option>
+            <option value="Fairy">Fairy</option>
+            <option value="Fighting">Fighting</option>
+            <option value="Ghost">Ghost</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Tipo Secundário</label>
+          <select id="tipo2">
+            <option value="">Nenhum</option>
+            <option value="Normal">Normal</option>
+            <option value="Flying">Flying</option>
+            <option value="Electric">Electric</option>
+            <option value="Fire">Fire</option>
+            <option value="Water">Water</option>
+            <option value="Grass">Grass</option>
+            <option value="Poison">Poison</option>
+            <option value="Bug">Bug</option>
+            <option value="Rock">Rock</option>
+            <option value="Ground">Ground</option>
+            <option value="Psychic">Psychic</option>
+            <option value="Ice">Ice</option>
+            <option value="Dragon">Dragon</option>
+            <option value="Dark">Dark</option>
+            <option value="Steel">Steel</option>
+            <option value="Fairy">Fairy</option>
+            <option value="Fighting">Fighting</option>
+            <option value="Ghost">Ghost</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Natureza</label>
+          <select id="natureza">
+            <option value="">Selecione...</option>
+            <option value="Adamant">Adamant (+Atq −AtqEsp)</option>
+            <option value="Bashful">Bashful (neutra)</option>
+            <option value="Bold">Bold (+Def −Atq)</option>
+            <option value="Brave">Brave (+Atq −Vel)</option>
+            <option value="Calm">Calm (+DefEsp −Atq)</option>
+            <option value="Careful">Careful (+DefEsp −AtqEsp)</option>
+            <option value="Docile">Docile (neutra)</option>
+            <option value="Gentle">Gentle (+DefEsp −Def)</option>
+            <option value="Hardy">Hardy (neutra)</option>
+            <option value="Hasty">Hasty (+Vel −Def)</option>
+            <option value="Impish">Impish (+Def −AtqEsp)</option>
+            <option value="Jolly">Jolly (+Vel −AtqEsp)</option>
+            <option value="Lax">Lax (+Def −DefEsp)</option>
+            <option value="Lonely">Lonely (+Atq −Def)</option>
+            <option value="Mild">Mild (+AtqEsp −Def)</option>
+            <option value="Modest">Modest (+AtqEsp −Atq)</option>
+            <option value="Naive">Naive (+Vel −DefEsp)</option>
+            <option value="Naughty">Naughty (+Atq −DefEsp)</option>
+            <option value="Quiet">Quiet (+AtqEsp −Vel)</option>
+            <option value="Quirky">Quirky (neutra)</option>
+            <option value="Rash">Rash (+AtqEsp −DefEsp)</option>
+            <option value="Relaxed">Relaxed (+Def −Vel)</option>
+            <option value="Sassy">Sassy (+DefEsp −Vel)</option>
+            <option value="Serious">Serious (neutra)</option>
+            <option value="Timid">Timid (+Vel −Atq)</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Habilidade</label>
+          <input type="text" id="habilidade" placeholder="Ex: Keen Eye" list="lista-habilidades" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label>Sexo</label>
+          <select id="sexo">
+            <option value="">Sem sexo / não informado</option>
+            <option value="M">♂ Macho</option>
+            <option value="F">♀ Fêmea</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Variante</label>
+          <div class="opcoes-variante">
+            <label><input type="checkbox" id="alfa"> 🔴 Alfa</label>
+            <label><input type="checkbox" id="shiny"> ✨ Shiny</label>
+          </div>
+        </div>
+        <div class="campo">
+          <label>Nível Atual</label>
+          <input type="number" id="nivel" placeholder="Ex: 75" min="1" max="100">
+        </div>
+        <div class="campo">
+          <label>EXP Próx. Nível</label>
+          <input type="text" id="proxNivel" placeholder="Ex: 3.488" inputmode="numeric" autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <!-- Como reconhecer o Pokémon no jogo -->
+    <div class="secao-form">
+      <h3>Como reconhecer no jogo</h3>
+      <p class="dica-ataques">
+        Vários da mesma espécie parecem iguais no PC. Dê um apelido único no jogo
+        (o lápis ao lado do Nome, no Sumário) e coloque o mesmo aqui. Opcional, mas ajuda muito.
+      </p>
+      <div class="campos">
+        <div class="campo">
+          <label>Apelido no jogo</label>
+          <input type="text" id="apelido" placeholder="Ex: Growl01" maxlength="20">
+        </div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 2: Stats -->
+    <div class="secao-form">
+      <h3>Stats</h3>
+      <div class="projecao">
+        <div id="projecao-stats" class="projecao-stats">Escolha o Pokémon para ver a projeção dos stats no Lv. 100.</div>
+        <button type="button" id="btn-calcular-stats" class="btn-calcular" onclick="preencherStatsCalculados()" disabled>
+          Calcular stats do nível atual
+        </button>
+      </div>
+      <p class="dica-ataques">Dica: preencha nível, natureza, IVs e EVs e clique no botão. Os stats ficam iguais aos do jogo, sem precisar digitar.</p>
+      <div class="campos">
+        <div class="campo">
+          <label>HP</label>
+          <input type="number" id="hp" placeholder="Ex: 258">
+        </div>
+        <div class="campo">
+          <label>Felicidade (%)</label>
+          <input type="number" id="felicidade" placeholder="Ex: 100" min="0" max="100">
+        </div>
+        <div class="campo">
+          <label>Ataque</label>
+          <input type="number" id="ataque" placeholder="Ex: 191">
+        </div>
+        <div class="campo">
+          <label>Defesa</label>
+          <input type="number" id="defesa" placeholder="Ex: 154">
+        </div>
+        <div class="campo">
+          <label>Atq. Especial</label>
+          <input type="number" id="atqEsp" placeholder="Ex: 142">
+        </div>
+        <div class="campo">
+          <label>Def. Especial</label>
+          <input type="number" id="defEsp" placeholder="Ex: 150">
+        </div>
+        <div class="campo">
+          <label>Velocidade</label>
+          <input type="number" id="velocidade" placeholder="Ex: 262">
+        </div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 3: EVs -->
+    <div class="secao-form">
+      <h3>EVs <span class="total-ev">Total: <span id="total-ev">0</span>/510</span></h3>
+      <div class="campos">
+        <div class="campo">
+          <label>EV HP</label>
+          <input type="number" id="evHp" placeholder="0" min="0" max="252" oninput="atualizarTotalEV()">
+        </div>
+        <div class="campo">
+          <label>EV Ataque</label>
+          <input type="number" id="evAtaque" placeholder="0" min="0" max="252" oninput="atualizarTotalEV()">
+        </div>
+        <div class="campo">
+          <label>EV Defesa</label>
+          <input type="number" id="evDefesa" placeholder="0" min="0" max="252" oninput="atualizarTotalEV()">
+        </div>
+        <div class="campo">
+          <label>EV Atq. Esp</label>
+          <input type="number" id="evAtqEsp" placeholder="0" min="0" max="252" oninput="atualizarTotalEV()">
+        </div>
+        <div class="campo">
+          <label>EV Def. Esp</label>
+          <input type="number" id="evDefEsp" placeholder="0" min="0" max="252" oninput="atualizarTotalEV()">
+        </div>
+        <div class="campo">
+          <label>EV Velocidade</label>
+          <input type="number" id="evVelocidade" placeholder="0" min="0" max="252" oninput="atualizarTotalEV()">
+        </div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 4: IVs -->
+    <div class="secao-form">
+      <h3>IVs <span class="total-iv">Total: <span id="total-iv">0</span>/186</span></h3>
+      <div class="campos">
+        <div class="campo">
+          <label>IV HP</label>
+          <input type="number" id="ivHp" placeholder="0" min="0" max="31" oninput="atualizarTotalIV()">
+        </div>
+        <div class="campo">
+          <label>IV Ataque</label>
+          <input type="number" id="ivAtaque" placeholder="0" min="0" max="31" oninput="atualizarTotalIV()">
+        </div>
+        <div class="campo">
+          <label>IV Defesa</label>
+          <input type="number" id="ivDefesa" placeholder="0" min="0" max="31" oninput="atualizarTotalIV()">
+        </div>
+        <div class="campo">
+          <label>IV Atq. Esp</label>
+          <input type="number" id="ivAtqEsp" placeholder="0" min="0" max="31" oninput="atualizarTotalIV()">
+        </div>
+        <div class="campo">
+          <label>IV Def. Esp</label>
+          <input type="number" id="ivDefEsp" placeholder="0" min="0" max="31" oninput="atualizarTotalIV()">
+        </div>
+        <div class="campo">
+          <label>IV Velocidade</label>
+          <input type="number" id="ivVelocidade" placeholder="0" min="0" max="31" oninput="atualizarTotalIV()">
+        </div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 5: Movimentos -->
+    <div class="secao-form">
+      <h3>Movimentos</h3>
+      <p class="dica-ataques" id="dica-ataques">Escolha o Pokémon acima para ver só os ataques que ele pode aprender.</p>
+      <div id="ataques-populares"></div>
+
+      <div class="movimento-grupo">
+        <span class="movimento-numero">1</span>
+        <div class="campo">
+          <label>Nome</label>
+          <input type="text" id="mov1Nome" placeholder="Ex: Fly" list="lista-ataques" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label>Tipo</label>
+          <select id="mov1Tipo">
+            <option value="">Selecione...</option>
+            <option value="Normal">Normal</option>
+            <option value="Flying">Flying</option>
+            <option value="Electric">Electric</option>
+            <option value="Fire">Fire</option>
+            <option value="Water">Water</option>
+            <option value="Grass">Grass</option>
+            <option value="Psychic">Psychic</option>
+            <option value="Ice">Ice</option>
+            <option value="Dragon">Dragon</option>
+            <option value="Dark">Dark</option>
+            <option value="Steel">Steel</option>
+            <option value="Fairy">Fairy</option>
+            <option value="Fighting">Fighting</option>
+            <option value="Ghost">Ghost</option>
+            <option value="Poison">Poison</option>
+            <option value="Bug">Bug</option>
+            <option value="Rock">Rock</option>
+            <option value="Ground">Ground</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="movimento-grupo">
+        <span class="movimento-numero">2</span>
+        <div class="campo">
+          <label>Nome</label>
+          <input type="text" id="mov2Nome" placeholder="Ex: Hurricane" list="lista-ataques" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label>Tipo</label>
+          <select id="mov2Tipo">
+            <option value="">Selecione...</option>
+            <option value="Normal">Normal</option>
+            <option value="Flying">Flying</option>
+            <option value="Electric">Electric</option>
+            <option value="Fire">Fire</option>
+            <option value="Water">Water</option>
+            <option value="Grass">Grass</option>
+            <option value="Psychic">Psychic</option>
+            <option value="Ice">Ice</option>
+            <option value="Dragon">Dragon</option>
+            <option value="Dark">Dark</option>
+            <option value="Steel">Steel</option>
+            <option value="Fairy">Fairy</option>
+            <option value="Fighting">Fighting</option>
+            <option value="Ghost">Ghost</option>
+            <option value="Poison">Poison</option>
+            <option value="Bug">Bug</option>
+            <option value="Rock">Rock</option>
+            <option value="Ground">Ground</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="movimento-grupo">
+        <span class="movimento-numero">3</span>
+        <div class="campo">
+          <label>Nome</label>
+          <input type="text" id="mov3Nome" placeholder="Ex: Gust" list="lista-ataques" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label>Tipo</label>
+          <select id="mov3Tipo">
+            <option value="">Selecione...</option>
+            <option value="Normal">Normal</option>
+            <option value="Flying">Flying</option>
+            <option value="Electric">Electric</option>
+            <option value="Fire">Fire</option>
+            <option value="Water">Water</option>
+            <option value="Grass">Grass</option>
+            <option value="Psychic">Psychic</option>
+            <option value="Ice">Ice</option>
+            <option value="Dragon">Dragon</option>
+            <option value="Dark">Dark</option>
+            <option value="Steel">Steel</option>
+            <option value="Fairy">Fairy</option>
+            <option value="Fighting">Fighting</option>
+            <option value="Ghost">Ghost</option>
+            <option value="Poison">Poison</option>
+            <option value="Bug">Bug</option>
+            <option value="Rock">Rock</option>
+            <option value="Ground">Ground</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="movimento-grupo">
+        <span class="movimento-numero">4</span>
+        <div class="campo">
+          <label>Nome</label>
+          <input type="text" id="mov4Nome" placeholder="Ex: Quick Attack" list="lista-ataques" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label>Tipo</label>
+          <select id="mov4Tipo">
+            <option value="">Selecione...</option>
+            <option value="Normal">Normal</option>
+            <option value="Flying">Flying</option>
+            <option value="Electric">Electric</option>
+            <option value="Fire">Fire</option>
+            <option value="Water">Water</option>
+            <option value="Grass">Grass</option>
+            <option value="Psychic">Psychic</option>
+            <option value="Ice">Ice</option>
+            <option value="Dragon">Dragon</option>
+            <option value="Dark">Dark</option>
+            <option value="Steel">Steel</option>
+            <option value="Fairy">Fairy</option>
+            <option value="Fighting">Fighting</option>
+            <option value="Ghost">Ghost</option>
+            <option value="Poison">Poison</option>
+            <option value="Bug">Bug</option>
+            <option value="Rock">Rock</option>
+            <option value="Ground">Ground</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Botão de salvar -->
+    <div id="resultado-comparacao"></div>
+    <button class="btn-salvar" onclick="salvarPokemon()">Cadastrar Pokémon</button>
+
+  </main>
+
+  <!-- Sugestões preenchidas pelo cadastro.js com dados da PokéAPI -->
+  <datalist id="lista-especies"></datalist>
+  <datalist id="lista-habilidades"></datalist>
+  <datalist id="lista-ataques"></datalist>
+
+  <script src="comum.js"></script>
+  <script src="cadastro.js"></script>
+
+</body>
+</html>

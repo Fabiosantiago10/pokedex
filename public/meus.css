@@ -1,0 +1,143 @@
+.meus-container {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 0 20px 40px 20px;
+}
+
+.meus-container h2 {
+  font-size: 22px;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.meus-subtitulo {
+  color: #666;
+  margin-top: 0;
+}
+
+.form-nick {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.form-nick input,
+.filtro-especie {
+  flex: 1;
+  padding: 10px 16px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+}
+
+.form-nick input:focus,
+.filtro-especie:focus {
+  border-color: #cc0000;
+}
+
+.form-nick button {
+  padding: 10px 24px;
+  background: #cc0000;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.form-nick button:hover {
+  background: #a80000;
+}
+
+.resumo {
+  color: #444;
+  margin-bottom: 16px;
+}
+
+.filtro-especie {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.grupo {
+  background: white;
+  border-radius: 12px;
+  border-left: 6px solid #ccc;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+}
+
+.grupo-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.grupo-cabecalho h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.grupo-total {
+  font-size: 12px;
+  background: #eee;
+  color: #555;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-weight: normal;
+  vertical-align: middle;
+}
+
+.tabela-rolagem {
+  overflow-x: auto;
+}
+
+.tabela-meus {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tabela-meus th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: normal;
+  color: #777;
+  padding: 6px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.tabela-meus td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+}
+
+.tabela-meus td.col-onde {
+  white-space: normal;
+}
+
+.tabela-meus tr.mais-forte td {
+  background: #fffbea;
+  font-weight: bold;
+}
+
+.link-editar {
+  color: #cc0000;
+  font-size: 13px;
+}
+
+.vazio {
+  color: #aaa;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .form-nick { flex-direction: column; }
+}
