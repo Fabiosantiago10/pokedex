@@ -35,15 +35,10 @@
   <section class="secao-pagina">
     <div class="barra-ferramentas">
       <h2 class="titulo-secao">Todos os Pokémon <span id="contador" class="contador"></span></h2>
-      <div class="alternar-visao" role="group" aria-label="Forma de exibir">
-        <button type="button" data-visao="cards" class="ativo">Cartas</button>
-        <button type="button" data-visao="ranking">Ranking</button>
-      </div>
     </div>
     <input type="search" id="busca" class="busca" placeholder="Buscar Pokémon pelo nome..." autocomplete="off">
 
     <div id="lista" class="grade-cartas"></div>
-    <div id="ranking" class="ranking" hidden></div>
   </section>
 
   <div id="detalhe" class="modal" onclick="fecharDetalhe()">

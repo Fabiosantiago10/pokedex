@@ -301,10 +301,6 @@ small {
 
 
 
-.podio-ivs {
-  font-size: 12px;
-  color: var(--texto-suave);
-}
 
 /* "Degrau" do pódio embaixo de cada um */
 .degrau {
@@ -332,8 +328,7 @@ small {
   grid-template-columns: 34px 56px 1fr auto;
   grid-template-areas:
     "posicao imagem nome stats"
-    "posicao imagem tipos stats"
-    "posicao imagem ivs stats";
+    "posicao imagem tipos stats";
   align-items: center;
   column-gap: 10px;
   padding: 10px 16px;
@@ -355,7 +350,6 @@ small {
 .resto-imagem  { grid-area: imagem; width: 56px; height: 56px; object-fit: contain; }
 .resto-nome    { grid-area: nome; font-weight: 700; }
 .resto-item .tipos { grid-area: tipos; }
-.resto-ivs     { grid-area: ivs; font-size: 12px; color: var(--texto-suave); }
 .resto-stats   { grid-area: stats; }
 
 /* ---------- Busca e troca de visão ---------- */
@@ -372,29 +366,8 @@ small {
   margin: 0;
 }
 
-.alternar-visao {
-  display: inline-flex;
-  background: #e4e7eb;
-  border-radius: 999px;
-  padding: 4px;
-}
 
-.alternar-visao button {
-  border: none;
-  background: transparent;
-  padding: 7px 18px;
-  border-radius: 999px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--texto-suave);
-  cursor: pointer;
-}
 
-.alternar-visao button.ativo {
-  background: white;
-  color: var(--vermelho);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-}
 
 .busca {
   width: 100%;
@@ -615,80 +588,6 @@ small {
   font-weight: 700;
   color: rgba(31, 41, 51, 0.55);
 }
-
-/* ---------- Ranking ---------- */
-.ranking {
-  background: var(--cartao);
-  border-radius: var(--raio);
-  box-shadow: var(--sombra);
-  overflow-x: auto;
-}
-
-.tabela-ranking {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.tabela-ranking th {
-  text-align: left;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--texto-suave);
-  padding: 12px 10px;
-  border-bottom: 2px solid var(--borda);
-  white-space: nowrap;
-}
-
-.tabela-ranking td {
-  padding: 8px 10px;
-  border-bottom: 1px solid #f0f2f4;
-  vertical-align: middle;
-}
-
-.tabela-ranking tbody tr {
-  cursor: pointer;
-  transition: background 0.12s;
-}
-
-.tabela-ranking tbody tr:hover,
-.tabela-ranking tbody tr:focus {
-  background: #fff6f3;
-  outline: none;
-}
-
-.col-posicao {
-  font-weight: 800;
-  font-size: 16px;
-  width: 44px;
-  text-align: center;
-  color: var(--texto-suave);
-}
-
-.col-imagem {
-  width: 64px;
-  padding-right: 0 !important;
-}
-
-.ranking-imagem {
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
-}
-
-.col-ivs {
-  min-width: 140px;
-}
-
-.valor-ivs {
-  font-weight: 700;
-  margin-right: 6px;
-}
-
-.col-ivs .barra {
-  margin-top: 4px;
-}
-
 
 /* ---------- Janela de detalhes ---------- */
 .modal {
@@ -940,11 +839,10 @@ table.comparativo .selo {
   .podio-imagem { width: 76px; height: 76px; }
   .lugar-1 .podio-imagem { width: 96px; height: 96px; }
   .podio-nome { font-size: 14px; }
-  .podio-ivs, .podio-item .tipos { display: none; }
+  .podio-item .tipos { display: none; }
   .medalha { font-size: 18px; top: 6px; left: 8px; }
   .podio-resto { grid-template-columns: 1fr; }
   .grade-cartas { grid-template-columns: 1fr; max-width: 340px; margin: 0 auto; }
-  .col-opcional { display: none; }
   .detalhe-topo { grid-template-columns: 1fr; justify-items: center; text-align: center; padding: 24px 20px 16px; }
   .detalhe-imagem { width: 140px; height: 140px; }
   .detalhe-grade { grid-template-columns: 1fr; padding: 12px 14px 0; }
@@ -1013,7 +911,7 @@ table.comparativo .selo {
   .detalhe-imagem { width: 130px; height: 130px; }
 }
 
-/* ---------- Status compactos (pódio e ranking) ---------- */
+/* ---------- Status compactos (Top 3 do pódio) ---------- */
 .stats-compactos {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1050,15 +948,7 @@ table.comparativo .selo {
 
 
 
-.col-stats .stats-compactos {
-  grid-template-columns: repeat(6, auto);
-  min-width: 260px;
-  margin-top: 0;
-}
 
-.col-stats .stat-compacto {
-  background: #f4f5f7;
-}
 
 /* ---------- Status em lista (pódio e 4º/5º) ---------- */
 .stats-lista {
