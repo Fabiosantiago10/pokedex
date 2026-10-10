@@ -84,7 +84,7 @@ function renderizarPodio(lista) {
       <span class="resto-nome">${escaparHtml(p.nome)} ${selosVariante(p)}</span>
       <span class="tipos">${badgeTipo(p.tipo1)}${badgeTipo(p.tipo2)}</span>
       <span class="resto-ivs">${resumoIVs(p)}</span>
-      <span class="resto-stats">${statsCompactos(p)}</span>
+      <span class="resto-stats">${statsLista(p)}</span>
     </button>
   `).join('')
 }

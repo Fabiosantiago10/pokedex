@@ -1087,15 +1087,25 @@ table.comparativo .selo {
   .stats-lista .atributo strong { font-size: 12px; }
 }
 
-/* 4º e 5º lugar: status compactos, como na aba Ranking */
-.resto-stats .stats-compactos {
-  grid-template-columns: repeat(6, auto);
-  margin-top: 0;
+/* 4º e 5º lugar: status em lista, em duas colunas para não ficar alto */
+.resto-item {
+  grid-template-columns: 34px 56px minmax(110px, 1fr) minmax(260px, 1.4fr);
 }
 
-.resto-stats .stat-compacto {
+.resto-stats .stats-lista {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(3, auto);
+  column-gap: 16px;
+  margin-top: 0;
   background: #f4f5f7;
-  padding: 3px 7px;
+}
+
+/* Na lista de duas colunas, a última linha de cada coluna fica sem traço */
+.resto-stats .stats-lista .atributo:nth-child(3),
+.resto-stats .stats-lista .atributo:nth-child(6) {
+  border-bottom: none;
 }
 
 @media (max-width: 720px) {
@@ -1106,10 +1116,6 @@ table.comparativo .selo {
       "posicao imagem tipos"
       "posicao imagem ivs"
       "stats stats stats";
-    row-gap: 4px;
-  }
-
-  .resto-stats .stats-compactos {
-    grid-template-columns: repeat(6, 1fr);
+    row-gap: 6px;
   }
 }
