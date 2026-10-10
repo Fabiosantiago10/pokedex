@@ -1130,3 +1130,29 @@ table.comparativo .selo {
     font-size: 11px;
   }
 }
+
+/* Top 3 do pódio: status compactos, lado a lado */
+.podio-item .stats-compactos {
+  grid-template-columns: repeat(6, 1fr);
+  margin-top: 8px;
+}
+
+.podio-item .stat-compacto {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 2px;
+}
+
+@media (max-width: 720px) {
+  .podio-item .stats-compactos {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+  }
+
+  .podio-item .stat-compacto small {
+    font-size: 9px;
+  }
+
+  .podio-item .stat-compacto strong {
+    font-size: 12px;
+  }
+}

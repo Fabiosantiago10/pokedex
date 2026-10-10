@@ -70,7 +70,7 @@ function renderizarPodio(lista) {
         <span class="podio-nome">${escaparHtml(p.nome)}</span>
         <span class="tipos">${badgeTipo(p.tipo1)}${badgeTipo(p.tipo2)}</span>
         ${p.alfa || p.shiny ? `<span>${selosVariante(p)}</span>` : ''}
-        ${statsLista(p)}
+        ${statsCompactos(p)}
         <span class="podio-ivs">${resumoIVs(p)}</span>
         <span class="degrau">${i + 1}º</span>
       </button>
