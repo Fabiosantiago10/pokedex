@@ -97,5 +97,5 @@ function salvarTreinador(nick) {
 
 // O servidor (Node) usa a mesma fórmula de stats, para a nota bater com o que aparece na tela
 if (typeof module !== 'undefined') {
-  module.exports = { calcularStats }
+  module.exports = { calcularStats, NATUREZAS }
 }

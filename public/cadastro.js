@@ -8,6 +8,67 @@ function valor(id) {
   return parseInt(document.getElementById(id).value.replace(/[.,\s]/g, '')) || 0
 }
 
+// ---------- Limites dos números (iguais aos do jogo) ----------
+// O navegador não impede digitar 50 num campo com max=31, então conferimos aqui.
+const LIMITES = { nivel: [1, 100, 'Nível'], felicidade: [0, 100, 'Felicidade'] }
+ATRIBUTOS.forEach(function(a) {
+  LIMITES[a] = [0, 999, `Stat ${NOMES_ATRIBUTOS[a]}`]
+  LIMITES['ev' + SUFIXOS[a]] = [0, 252, `EV ${NOMES_ATRIBUTOS[a]}`]
+  LIMITES['iv' + SUFIXOS[a]] = [0, 31, `IV ${NOMES_ATRIBUTOS[a]}`]
+})
+
+// Marca em vermelho o campo com número fora do limite e devolve a mensagem de erro (ou '')
+function conferirLimite(id) {
+  const [min, max, rotulo] = LIMITES[id]
+  const campo = document.getElementById(id)
+  const texto = campo.value.trim()
+  const n = valor(id)
+  const erro = texto !== '' && (n < min || n > max || !/^-?[\d.,\s]+$/.test(texto))
+    ? `${rotulo}: deve estar entre ${min} e ${max}`
+    : ''
+  campo.classList.toggle('invalido', Boolean(erro))
+  campo.title = erro
+  return erro
+}
+
+function conferirTotalEV() {
+  const total = ATRIBUTOS.reduce((t, a) => t + valor('ev' + SUFIXOS[a]), 0)
+  document.querySelector('.total-ev').classList.toggle('total-invalido', total > 510)
+  return total > 510 ? `O total de EVs (${total}) não pode passar de 510` : ''
+}
+
+function nomeComoSlug(nome) {
+  return nome.trim().toLowerCase().replace(/[.'’:]/g, '').replace(/[\s-]+/g, '-')
+}
+
+// Junta todos os problemas do formulário antes de enviar
+function validarFormulario() {
+  const erros = Object.keys(LIMITES).map(conferirLimite).filter(Boolean)
+  if (!document.getElementById('nivel').value.trim()) erros.push('Preencha o Nível Atual')
+  const erroEV = conferirTotalEV()
+  if (erroEV) erros.push(erroEV)
+
+  const nome = campoNome.value.trim()
+  if (especies.length > 0 && !especies.some(e => nomeComoSlug(e) === nomeComoSlug(nome))) {
+    erros.push(`"${nome}" não é um Pokémon. Confira o nome ou use o número da Pokédex.`)
+    campoNome.classList.add('invalido')
+  }
+
+  for (let n = 1; n <= 4; n++) {
+    const campo = document.getElementById(`mov${n}Nome`)
+    if (campo.classList.contains('invalido')) erros.push(`${especieCarregada} não aprende o ataque "${campo.value.trim()}"`)
+  }
+  return erros
+}
+
+// Confere cada número enquanto a pessoa digita
+Object.keys(LIMITES).forEach(function(id) {
+  document.getElementById(id).addEventListener('input', function() {
+    conferirLimite(id)
+    if (id.startsWith('ev')) conferirTotalEV()
+  })
+})
+
 // ---------- Stats calculados (igual ao "No Lv. 100" do jogo) ----------
 let baseAtual = null  // stats base da espécie escolhida (vêm da PokéAPI)
 
@@ -73,6 +134,9 @@ try {
 const campoPin = document.getElementById('pin')
 const statusPin = document.getElementById('status-pin')
 
+const campoInicial = document.getElementById('inicial')
+let infoNick = null  // { temPin, temInicial } do nick digitado
+
 async function verificarPinDoNick() {
   const nick = campoTreinador.value.trim()
   if (!nick) return
@@ -80,10 +144,14 @@ async function verificarPinDoNick() {
     const resposta = await fetch('/api/treinadores/' + encodeURIComponent(nick))
     const info = await resposta.json()
     if (campoTreinador.value.trim() !== nick) return  // o nick mudou enquanto carregava
+    infoNick = info
     statusPin.classList.toggle('pin-novo', !info.temPin)
     statusPin.textContent = info.temPin
       ? `Digite o PIN do nick ${nick}.`
       : `O nick ${nick} ainda não tem PIN: o que você digitar agora vira o PIN dele. Guarde bem!`
+    // O primeiro Pokémon é pedido ao criar o PIN (ou para quem ainda não escolheu)
+    document.getElementById('campo-inicial').hidden = info.temPin && info.temInicial
+    document.getElementById('link-esqueci').hidden = !info.temPin
   } catch (erro) {
     console.error(erro)
   }
@@ -91,6 +159,67 @@ async function verificarPinDoNick() {
 
 campoTreinador.addEventListener('change', verificarPinDoNick)
 verificarPinDoNick()
+
+// ---------- Esqueci meu PIN ----------
+function abrirRecuperacao() {
+  const nick = campoTreinador.value.trim()
+  if (!nick) {
+    alert('Digite o seu nick primeiro.')
+    return
+  }
+  if (infoNick && infoNick.temPin && !infoNick.temInicial) {
+    alert('Esse nick não escolheu um primeiro Pokémon quando criou o PIN, então não dá para recuperar por aqui.')
+    return
+  }
+  document.getElementById('recuperar-nick').textContent = nick
+  document.getElementById('recuperar-resultado').innerHTML = ''
+  const painel = document.getElementById('painel-recuperar')
+  painel.hidden = false
+  painel.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+function fecharRecuperacao() {
+  document.getElementById('painel-recuperar').hidden = true
+  document.getElementById('novo-pin').value = ''
+  document.querySelectorAll('input[name="recuperar-inicial"]').forEach(r => { r.checked = false })
+}
+
+async function recuperarPin() {
+  const nick = campoTreinador.value.trim()
+  const escolhido = document.querySelector('input[name="recuperar-inicial"]:checked')
+  const novoPin = document.getElementById('novo-pin').value
+  const divResultado = document.getElementById('recuperar-resultado')
+
+  if (!escolhido) {
+    divResultado.innerHTML = '<p class="status-erro-texto">Escolha o seu primeiro Pokémon.</p>'
+    return
+  }
+  if (novoPin.length < 4) {
+    divResultado.innerHTML = '<p class="status-erro-texto">O novo PIN deve ter de 4 a 20 caracteres.</p>'
+    return
+  }
+
+  try {
+    const resposta = await fetch('/api/treinadores/recuperar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nick, inicial: escolhido.value, novoPin })
+    })
+    const resultado = await resposta.json()
+    if (!resposta.ok) {
+      divResultado.innerHTML = `<p class="status-erro-texto">${escaparHtml(resultado.erros.join(' '))}</p>`
+      return
+    }
+    // Já deixa o PIN novo no campo, para continuar o cadastro
+    campoPin.value = novoPin
+    fecharRecuperacao()
+    statusPin.classList.remove('pin-novo')
+    statusPin.textContent = `🔐 PIN do nick ${nick} trocado! Ele já está preenchido acima.`
+  } catch (erro) {
+    divResultado.innerHTML = '<p class="status-erro-texto">Não foi possível falar com o servidor.</p>'
+    console.error(erro)
+  }
+}
 
 // ---------- Autocompletar com dados da PokéAPI ----------
 const campoNome = document.getElementById('nome')
@@ -138,7 +267,7 @@ function adicionarAtaque(nome) {
 }
 
 // Quando o ataque digitado é conhecido, coloca o tipo automaticamente.
-// Se o Pokémon não aprende esse ataque, o campo fica marcado (mas não bloqueia, pois alguns jogos diferem).
+// Se o Pokémon não aprende esse ataque, o campo fica vermelho e o cadastro não é enviado.
 function atualizarTipoAtaque(n) {
   const campo = document.getElementById(`mov${n}Nome`)
   const ataque = ataquesAtuais[campo.value.trim().toLowerCase()]
@@ -147,8 +276,8 @@ function atualizarTipoAtaque(n) {
     document.getElementById(`mov${n}Tipo`).value = ataque.tipo
   }
   const desconhecido = especieCarregada && campo.value.trim() && !ataque
-  campo.classList.toggle('aviso', Boolean(desconhecido))
-  campo.title = desconhecido ? `${especieCarregada} não aprende esse ataque nos jogos oficiais` : ''
+  campo.classList.toggle('invalido', Boolean(desconhecido))
+  campo.title = desconhecido ? `${especieCarregada} não aprende esse ataque` : ''
 }
 
 for (let n = 1; n <= 4; n++) {
@@ -183,9 +312,13 @@ async function carregarEspecie(nome) {
   try {
     const resposta = await fetch('/api/especies/' + encodeURIComponent(nome))
     if (resposta.status === 404) {
-      statusEspecie.textContent = 'Pokémon não encontrado na Pokédex oficial.'
+      statusEspecie.textContent = `"${nome}" não é um Pokémon. Confira o nome ou use o número da Pokédex.`
+      statusEspecie.classList.add('status-erro')
+      campoNome.classList.add('invalido')
       return
     }
+    statusEspecie.classList.remove('status-erro')
+    campoNome.classList.remove('invalido')
     if (!resposta.ok) throw new Error(resposta.status)
     const dados = await resposta.json()
 
@@ -284,6 +417,27 @@ async function salvarPokemon() {
     campoPin.focus()
     return
   }
+  if (infoNick && !infoNick.temPin && !campoInicial.value) {
+    alert('Escolha o seu primeiro Pokémon. Ele é usado para recuperar o PIN se você esquecer.')
+    campoInicial.focus()
+    return
+  }
+
+  const errosFormulario = validarFormulario()
+  if (errosFormulario.length > 0) {
+    const div = document.getElementById('resultado-comparacao')
+    div.innerHTML = `
+      <div class="comparacao-pior">
+        ⚠️ Corrija antes de salvar:
+        <ul>${errosFormulario.map(e => `<li>${escaparHtml(e)}</li>`).join('')}</ul>
+      </div>
+    `
+    // Leva até o primeiro campo errado
+    const primeiro = document.querySelector('.formulario-container .invalido')
+    if (primeiro) primeiro.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    else div.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    return
+  }
 
   const pokemon = {
     treinador: treinador,
@@ -327,7 +481,7 @@ async function salvarPokemon() {
     const resposta = await fetch(idEdicao ? '/api/pokemons/' + encodeURIComponent(idEdicao) : '/api/pokemons', {
       method: idEdicao ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...pokemon, pin: campoPin.value })
+      body: JSON.stringify({ ...pokemon, pin: campoPin.value, inicial: campoInicial.value })
     })
 
     const resultado = await resposta.json()
@@ -344,6 +498,10 @@ async function salvarPokemon() {
 
     // Só guarda o nick depois que o servidor aceitou o PIN
     salvarTreinador(treinador)
+    // Agora o nick tem PIN (e o primeiro Pokémon, se foi escolhido): esconde o campo e mostra "Esqueci"
+    infoNick = { temPin: true, temInicial: Boolean((infoNick && infoNick.temInicial) || campoInicial.value) }
+    document.getElementById('campo-inicial').hidden = infoNick.temInicial
+    document.getElementById('link-esqueci').hidden = false
     if (resultado.pinCriado) {
       statusPin.classList.remove('pin-novo')
       statusPin.textContent = `🔐 PIN criado para o nick ${treinador}. Ele será pedido para cadastrar e editar.`
@@ -465,13 +623,13 @@ if (idEdicao) iniciarEdicao()
 function limparFormulario() {
   document.querySelectorAll('.formulario-container input, .formulario-container select').forEach(function(campo) {
     // O nick continua: normalmente se cadastra vários Pokémon em sequência
-    if (campo.id === 'treinador' || campo.id === 'pin') return
-    if (campo.type === 'checkbox') {
+    if (campo.id === 'treinador' || campo.id === 'pin' || campo.id === 'inicial') return
+    if (campo.type === 'checkbox' || campo.type === 'radio') {
       campo.checked = false
       return
     }
     campo.value = ''
-    campo.classList.remove('aviso')
+    campo.classList.remove('invalido')
     campo.title = ''
   })
 
@@ -486,6 +644,8 @@ function limparFormulario() {
   document.getElementById('dica-ataques').textContent =
     'Escolha o Pokémon acima para ver só os ataques que ele pode aprender.'
   statusEspecie.textContent = ''
+  statusEspecie.classList.remove('status-erro')
+  document.querySelector('.total-ev').classList.remove('total-invalido')
   atualizarTotalEV()
   atualizarTotalIV()
 }

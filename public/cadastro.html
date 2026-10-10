@@ -31,20 +31,31 @@
       <div class="campos">
         <div class="campo">
           <label>Seu nick no jogo (OT)</label>
-          <input type="text" id="treinador" placeholder="Ex: SrFos" maxlength="30">
+          <input type="text" id="treinador" maxlength="30">
         </div>
         <div class="campo">
           <label>PIN do nick</label>
           <input type="password" id="pin" placeholder="4 a 20 caracteres" maxlength="20" autocomplete="off">
           <small id="status-pin" class="status-pin">Protege os seus Pokémon: só quem sabe o PIN cadastra e edita com esse nick.</small>
+          <button type="button" id="link-esqueci" class="link-esqueci" onclick="abrirRecuperacao()" hidden>Esqueci meu PIN</button>
+        </div>
+        <div class="campo" id="campo-inicial" hidden>
+          <label>Seu primeiro Pokémon</label>
+          <select id="inicial">
+            <option value="">Selecione...</option>
+            <option value="Bulbasaur">Bulbasaur (Planta / Veneno)</option>
+            <option value="Charmander">Charmander (Fogo)</option>
+            <option value="Squirtle">Squirtle (Água)</option>
+          </select>
+          <small class="status-pin">Usado para recuperar o PIN se você esquecer. Não aparece no site.</small>
         </div>
         <div class="campo">
           <label>Número na Pokédex</label>
-          <input type="text" id="numero" placeholder="Ex: 059" inputmode="numeric" autocomplete="off">
+          <input type="text" id="numero" inputmode="numeric" autocomplete="off">
         </div>
         <div class="campo">
           <label>Nome do Pokémon</label>
-          <input type="text" id="nome" placeholder="Comece a digitar: Pika..." list="lista-especies" autocomplete="off">
+          <input type="text" id="nome" list="lista-especies" autocomplete="off">
           <small id="status-especie" class="status-especie"></small>
         </div>
         <div class="campo">
@@ -128,7 +139,7 @@
         </div>
         <div class="campo">
           <label>Habilidade</label>
-          <input type="text" id="habilidade" placeholder="Ex: Keen Eye" list="lista-habilidades" autocomplete="off">
+          <input type="text" id="habilidade" list="lista-habilidades" autocomplete="off">
         </div>
         <div class="campo">
           <label>Sexo</label>
@@ -147,12 +158,32 @@
         </div>
         <div class="campo">
           <label>Nível Atual</label>
-          <input type="number" id="nivel" placeholder="Ex: 75" min="1" max="100">
+          <input type="number" id="nivel" min="1" max="100">
         </div>
         <div class="campo">
           <label>EXP Próx. Nível</label>
-          <input type="text" id="proxNivel" placeholder="Ex: 3.488" inputmode="numeric" autocomplete="off">
+          <input type="text" id="proxNivel" inputmode="numeric" autocomplete="off">
         </div>
+      </div>
+
+      <!-- Esqueci meu PIN -->
+      <div id="painel-recuperar" class="painel-recuperar" hidden>
+        <h4>Recuperar PIN do nick <span id="recuperar-nick"></span></h4>
+        <p>Escolha o primeiro Pokémon que você informou ao criar o PIN e defina um PIN novo.</p>
+        <div class="opcoes-iniciais">
+          <label><input type="radio" name="recuperar-inicial" value="Bulbasaur"> Bulbasaur</label>
+          <label><input type="radio" name="recuperar-inicial" value="Charmander"> Charmander</label>
+          <label><input type="radio" name="recuperar-inicial" value="Squirtle"> Squirtle</label>
+        </div>
+        <div class="campo">
+          <label>Novo PIN</label>
+          <input type="password" id="novo-pin" maxlength="20" autocomplete="off">
+        </div>
+        <div class="acoes-recuperar">
+          <button type="button" class="btn-calcular" onclick="recuperarPin()">Trocar PIN</button>
+          <button type="button" class="link-esqueci" onclick="fecharRecuperacao()">Cancelar</button>
+        </div>
+        <div id="recuperar-resultado"></div>
       </div>
     </div>
 
@@ -166,7 +197,7 @@
       <div class="campos">
         <div class="campo">
           <label>Apelido no jogo</label>
-          <input type="text" id="apelido" placeholder="Ex: Growl01" maxlength="20">
+          <input type="text" id="apelido" maxlength="20">
         </div>
       </div>
     </div>
@@ -184,31 +215,31 @@
       <div class="campos">
         <div class="campo">
           <label>HP</label>
-          <input type="number" id="hp" placeholder="Ex: 258">
+          <input type="number" id="hp">
         </div>
         <div class="campo">
           <label>Felicidade (%)</label>
-          <input type="number" id="felicidade" placeholder="Ex: 100" min="0" max="100">
+          <input type="number" id="felicidade" min="0" max="100">
         </div>
         <div class="campo">
           <label>Ataque</label>
-          <input type="number" id="ataque" placeholder="Ex: 191">
+          <input type="number" id="ataque">
         </div>
         <div class="campo">
           <label>Defesa</label>
-          <input type="number" id="defesa" placeholder="Ex: 154">
+          <input type="number" id="defesa">
         </div>
         <div class="campo">
           <label>Atq. Especial</label>
-          <input type="number" id="atqEsp" placeholder="Ex: 142">
+          <input type="number" id="atqEsp">
         </div>
         <div class="campo">
           <label>Def. Especial</label>
-          <input type="number" id="defEsp" placeholder="Ex: 150">
+          <input type="number" id="defEsp">
         </div>
         <div class="campo">
           <label>Velocidade</label>
-          <input type="number" id="velocidade" placeholder="Ex: 262">
+          <input type="number" id="velocidade">
         </div>
       </div>
     </div>
@@ -219,27 +250,27 @@
       <div class="campos">
         <div class="campo">
           <label>EV HP</label>
-          <input type="number" id="evHp" placeholder="0" min="0" max="252" oninput="atualizarTotalEV()">
+          <input type="number" id="evHp" min="0" max="252" oninput="atualizarTotalEV()">
         </div>
         <div class="campo">
           <label>EV Ataque</label>
-          <input type="number" id="evAtaque" placeholder="0" min="0" max="252" oninput="atualizarTotalEV()">
+          <input type="number" id="evAtaque" min="0" max="252" oninput="atualizarTotalEV()">
         </div>
         <div class="campo">
           <label>EV Defesa</label>
-          <input type="number" id="evDefesa" placeholder="0" min="0" max="252" oninput="atualizarTotalEV()">
+          <input type="number" id="evDefesa" min="0" max="252" oninput="atualizarTotalEV()">
         </div>
         <div class="campo">
           <label>EV Atq. Esp</label>
-          <input type="number" id="evAtqEsp" placeholder="0" min="0" max="252" oninput="atualizarTotalEV()">
+          <input type="number" id="evAtqEsp" min="0" max="252" oninput="atualizarTotalEV()">
         </div>
         <div class="campo">
           <label>EV Def. Esp</label>
-          <input type="number" id="evDefEsp" placeholder="0" min="0" max="252" oninput="atualizarTotalEV()">
+          <input type="number" id="evDefEsp" min="0" max="252" oninput="atualizarTotalEV()">
         </div>
         <div class="campo">
           <label>EV Velocidade</label>
-          <input type="number" id="evVelocidade" placeholder="0" min="0" max="252" oninput="atualizarTotalEV()">
+          <input type="number" id="evVelocidade" min="0" max="252" oninput="atualizarTotalEV()">
         </div>
       </div>
     </div>
@@ -250,27 +281,27 @@
       <div class="campos">
         <div class="campo">
           <label>IV HP</label>
-          <input type="number" id="ivHp" placeholder="0" min="0" max="31" oninput="atualizarTotalIV()">
+          <input type="number" id="ivHp" min="0" max="31" oninput="atualizarTotalIV()">
         </div>
         <div class="campo">
           <label>IV Ataque</label>
-          <input type="number" id="ivAtaque" placeholder="0" min="0" max="31" oninput="atualizarTotalIV()">
+          <input type="number" id="ivAtaque" min="0" max="31" oninput="atualizarTotalIV()">
         </div>
         <div class="campo">
           <label>IV Defesa</label>
-          <input type="number" id="ivDefesa" placeholder="0" min="0" max="31" oninput="atualizarTotalIV()">
+          <input type="number" id="ivDefesa" min="0" max="31" oninput="atualizarTotalIV()">
         </div>
         <div class="campo">
           <label>IV Atq. Esp</label>
-          <input type="number" id="ivAtqEsp" placeholder="0" min="0" max="31" oninput="atualizarTotalIV()">
+          <input type="number" id="ivAtqEsp" min="0" max="31" oninput="atualizarTotalIV()">
         </div>
         <div class="campo">
           <label>IV Def. Esp</label>
-          <input type="number" id="ivDefEsp" placeholder="0" min="0" max="31" oninput="atualizarTotalIV()">
+          <input type="number" id="ivDefEsp" min="0" max="31" oninput="atualizarTotalIV()">
         </div>
         <div class="campo">
           <label>IV Velocidade</label>
-          <input type="number" id="ivVelocidade" placeholder="0" min="0" max="31" oninput="atualizarTotalIV()">
+          <input type="number" id="ivVelocidade" min="0" max="31" oninput="atualizarTotalIV()">
         </div>
       </div>
     </div>
@@ -285,7 +316,7 @@
         <span class="movimento-numero">1</span>
         <div class="campo">
           <label>Nome</label>
-          <input type="text" id="mov1Nome" placeholder="Ex: Fly" list="lista-ataques" autocomplete="off">
+          <input type="text" id="mov1Nome" list="lista-ataques" autocomplete="off">
         </div>
         <div class="campo">
           <label>Tipo</label>
@@ -317,7 +348,7 @@
         <span class="movimento-numero">2</span>
         <div class="campo">
           <label>Nome</label>
-          <input type="text" id="mov2Nome" placeholder="Ex: Hurricane" list="lista-ataques" autocomplete="off">
+          <input type="text" id="mov2Nome" list="lista-ataques" autocomplete="off">
         </div>
         <div class="campo">
           <label>Tipo</label>
@@ -349,7 +380,7 @@
         <span class="movimento-numero">3</span>
         <div class="campo">
           <label>Nome</label>
-          <input type="text" id="mov3Nome" placeholder="Ex: Gust" list="lista-ataques" autocomplete="off">
+          <input type="text" id="mov3Nome" list="lista-ataques" autocomplete="off">
         </div>
         <div class="campo">
           <label>Tipo</label>
@@ -381,7 +412,7 @@
         <span class="movimento-numero">4</span>
         <div class="campo">
           <label>Nome</label>
-          <input type="text" id="mov4Nome" placeholder="Ex: Quick Attack" list="lista-ataques" autocomplete="off">
+          <input type="text" id="mov4Nome" list="lista-ataques" autocomplete="off">
         </div>
         <div class="campo">
           <label>Tipo</label>

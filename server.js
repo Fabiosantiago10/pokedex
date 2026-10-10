@@ -4,7 +4,7 @@ const path = require('path')
 const crypto = require('crypto')
 const db = require('./db')
 const pokeapi = require('./pokeapi')
-const { calcularStats } = require('./public/comum.js')
+const { calcularStats, NATUREZAS } = require('./public/comum.js')
 
 const app = express()
 
@@ -32,50 +32,83 @@ function buscarTreinador(nick) {
   return db.treinadores.find(t => t.chave === chave)
 }
 
-// Confere o PIN do nick. Se o nick ainda não tem PIN, o PIN informado passa a ser o dele.
-async function autenticar(nick, pin) {
+function confere(valor, salt, hashSalvo) {
+  return crypto.timingSafeEqual(Buffer.from(hashPin(valor, salt), 'hex'), Buffer.from(hashSalvo, 'hex'))
+}
+
+// Para recuperar o PIN, o treinador informa o seu primeiro Pokémon (escolhido ao criar o PIN)
+const INICIAIS = ['Bulbasaur', 'Charmander', 'Squirtle']
+
+function validarPin(pin) {
   pin = String(pin || '')
-  if (pin.length < 4 || pin.length > 20) {
-    return { status: 400, erro: 'O PIN deve ter de 4 a 20 caracteres' }
+  return pin.length < 4 || pin.length > 20 ? 'O PIN deve ter de 4 a 20 caracteres' : ''
+}
+
+// Muitos erros seguidos (de PIN ou de inicial) bloqueiam o nick por um tempo
+function bloqueio(chave) {
+  const registro = tentativas.get(chave)
+  if (!registro || registro.bloqueadoAte <= Date.now()) return ''
+  const minutos = Math.ceil((registro.bloqueadoAte - Date.now()) / 60000)
+  return `Muitas tentativas erradas. Tente de novo em ${minutos} minuto(s).`
+}
+
+function registrarErro(chave) {
+  const registro = tentativas.get(chave) || { erros: 0, bloqueadoAte: 0 }
+  registro.erros++
+  if (registro.erros >= MAX_TENTATIVAS) {
+    registro.erros = 0
+    registro.bloqueadoAte = Date.now() + MINUTOS_BLOQUEIO * 60000
   }
+  tentativas.set(chave, registro)
+}
+
+function guardarInicial(treinador, inicial) {
+  treinador.inicialHash = hashPin(inicial, treinador.salt)
+}
+
+// Confere o PIN do nick. Se o nick ainda não tem PIN, o PIN informado passa a ser o dele
+// (e aí é obrigatório escolher o inicial, usado para recuperar o PIN depois).
+async function autenticar(nick, pin, inicial) {
+  const erroPin = validarPin(pin)
+  if (erroPin) return { status: 400, erro: erroPin }
+  const inicialValido = INICIAIS.includes(inicial)
 
   const chave = nick.toLowerCase()
   const treinador = buscarTreinador(nick)
   if (!treinador) {
+    if (!inicialValido) {
+      return { status: 400, erro: 'Escolha o seu primeiro Pokémon: ele é usado para recuperar o PIN se você esquecer' }
+    }
     const salt = crypto.randomBytes(16).toString('hex')
     const novo = { chave, nick, salt, pinHash: hashPin(pin, salt), criadoEm: new Date().toISOString() }
+    guardarInicial(novo, inicial)
     db.treinadores.push(novo)
     await db.salvarTreinador(novo)
     return { ok: true, novo: true }
   }
 
-  // Muitos erros seguidos bloqueiam o nick por um tempo (evita testar todos os PINs)
-  const registro = tentativas.get(chave) || { erros: 0, bloqueadoAte: 0 }
-  if (registro.bloqueadoAte > Date.now()) {
-    const minutos = Math.ceil((registro.bloqueadoAte - Date.now()) / 60000)
-    return { status: 429, erro: `Muitas tentativas com PIN errado. Tente de novo em ${minutos} minuto(s).` }
-  }
+  const bloqueado = bloqueio(chave)
+  if (bloqueado) return { status: 429, erro: bloqueado }
 
-  const correto = crypto.timingSafeEqual(
-    Buffer.from(hashPin(pin, treinador.salt), 'hex'),
-    Buffer.from(treinador.pinHash, 'hex')
-  )
-  if (!correto) {
-    registro.erros++
-    if (registro.erros >= MAX_TENTATIVAS) {
-      registro.erros = 0
-      registro.bloqueadoAte = Date.now() + MINUTOS_BLOQUEIO * 60000
-    }
-    tentativas.set(chave, registro)
+  if (!confere(pin, treinador.salt, treinador.pinHash)) {
+    registrarErro(chave)
     return { status: 401, erro: `PIN incorreto para o nick ${treinador.nick}` }
   }
-
   tentativas.delete(chave)
+
+  // Quem criou o PIN antes da recuperação existir pode escolher o inicial agora
+  if (!treinador.inicialHash && inicialValido) {
+    guardarInicial(treinador, inicial)
+    await db.salvarTreinador(treinador)
+  }
   return { ok: true }
 }
 
 // ---------- Regras do jogo ----------
 const ATRIBUTOS = ['hp', 'ataque', 'defesa', 'atqEsp', 'defEsp', 'velocidade']
+const NOMES_ATRIBUTOS = { hp: 'HP', ataque: 'Ataque', defesa: 'Defesa', atqEsp: 'Atq. Esp', defEsp: 'Def. Esp', velocidade: 'Velocidade' }
+// As 20 naturezas que mudam stats + as 5 neutras
+const NOMES_NATUREZAS = [...Object.keys(NATUREZAS), 'Bashful', 'Docile', 'Hardy', 'Quirky', 'Serious']
 
 function soma(obj) {
   return ATRIBUTOS.reduce((total, a) => total + obj[a], 0)
@@ -133,7 +166,7 @@ function texto(valor, max = 40) {
 }
 
 // Normaliza o que veio do formulário e devolve uma lista de erros
-function validarPokemon(corpo) {
+async function validarPokemon(corpo) {
   const erros = []
 
   const pokemon = {
@@ -165,16 +198,53 @@ function validarPokemon(corpo) {
     pokemon.evs[a] = numero(corpo.evs && corpo.evs[a])
     pokemon.ivs[a] = numero(corpo.ivs && corpo.ivs[a])
 
-    if (pokemon.stats[a] < 0 || pokemon.stats[a] > 999) erros.push(`Stat ${a} deve estar entre 0 e 999`)
-    if (pokemon.evs[a] < 0 || pokemon.evs[a] > 252) erros.push(`EV ${a} deve estar entre 0 e 252`)
-    if (pokemon.ivs[a] < 0 || pokemon.ivs[a] > 31) erros.push(`IV ${a} deve estar entre 0 e 31`)
+    const nomeAtributo = NOMES_ATRIBUTOS[a]
+    if (pokemon.stats[a] < 0 || pokemon.stats[a] > 999) erros.push(`${nomeAtributo}: o stat deve estar entre 0 e 999`)
+    if (pokemon.evs[a] < 0 || pokemon.evs[a] > 252) erros.push(`EV de ${nomeAtributo}: deve estar entre 0 e 252`)
+    if (pokemon.ivs[a] < 0 || pokemon.ivs[a] > 31) erros.push(`IV de ${nomeAtributo}: deve estar entre 0 e 31`)
   })
 
   if (!pokemon.treinador) erros.push('Informe o seu nick do jogo')
   if (!pokemon.nome) erros.push('Informe o nome do Pokémon')
   if (soma(pokemon.evs) > 510) erros.push('O total de EVs não pode passar de 510')
   if (pokemon.nivel < 1 || pokemon.nivel > 100) erros.push('O nível deve estar entre 1 e 100')
+  if (pokemon.stats.felicidade < 0 || pokemon.stats.felicidade > 100) erros.push('A felicidade deve estar entre 0 e 100%')
+  if (pokemon.natureza && !NOMES_NATUREZAS.includes(pokemon.natureza)) erros.push(`A natureza "${pokemon.natureza}" não existe`)
+
+  if (pokemon.nome) erros.push(...await conferirComDadosOficiais(pokemon))
   return { pokemon, erros }
+}
+
+// Confere com a PokéAPI se o Pokémon existe e se ele aprende os ataques informados.
+// Também corrige nome, número, tipos e o tipo de cada ataque pelos dados oficiais.
+async function conferirComDadosOficiais(pokemon) {
+  let dados
+  try {
+    dados = await pokeapi.dadosDoPokemon(pokemon.nome)
+  } catch (erro) {
+    // PokéAPI fora do ar: não dá para conferir, então aceita o que foi digitado
+    console.error('Sem PokéAPI para conferir ' + pokemon.nome + ':', erro.message)
+    return []
+  }
+  if (!dados) return [`O Pokémon "${pokemon.nome}" não existe. Confira o nome ou use o número da Pokédex.`]
+
+  pokemon.nome = dados.nome
+  pokemon.numero = dados.numero
+  pokemon.tipo1 = dados.tipos[0] || ''
+  pokemon.tipo2 = dados.tipos[1] || null
+
+  const erros = []
+  const aprende = new Map(dados.ataques.map(a => [a.nome.toLowerCase(), a]))
+  pokemon.movimentos.forEach(function(m) {
+    const oficial = aprende.get(m.nome.toLowerCase())
+    if (!oficial) {
+      erros.push(`${dados.nome} não aprende o ataque "${m.nome}"`)
+      return
+    }
+    m.nome = oficial.nome
+    m.tipo = oficial.tipo
+  })
+  return erros
 }
 
 function mesmaEspecie(nome) {
@@ -266,12 +336,12 @@ app.get('/api/especies/:nome', async function(req, res) {
 
 // Cadastra um Pokémon e já devolve como ele ficou no ranking da espécie
 app.post('/api/pokemons', async function(req, res) {
-  const { pokemon, erros } = validarPokemon(req.body || {})
+  const { pokemon, erros } = await validarPokemon(req.body || {})
   if (erros.length > 0) {
     return res.status(400).json({ erros })
   }
 
-  const auth = await autenticar(pokemon.treinador, req.body.pin)
+  const auth = await autenticar(pokemon.treinador, req.body.pin, req.body.inicial)
   if (!auth.ok) return res.status(auth.status).json({ erros: [auth.erro] })
 
   const anteriores = rankingDaEspecie(pokemon.nome)
@@ -305,7 +375,39 @@ app.post('/api/pokemons', async function(req, res) {
 app.get('/api/treinadores/:nick', function(req, res) {
   const nick = String(req.params.nick).trim()
   const temPokemons = pokemons.some(p => p.treinador.toLowerCase() === nick.toLowerCase())
-  res.json({ temPin: Boolean(buscarTreinador(nick)), temPokemons })
+  const treinador = buscarTreinador(nick)
+  res.json({ temPin: Boolean(treinador), temInicial: Boolean(treinador && treinador.inicialHash), temPokemons })
+})
+
+// "Esqueci meu PIN": quem acerta o primeiro Pokémon do nick define um PIN novo
+app.post('/api/treinadores/recuperar', async function(req, res) {
+  const nick = String((req.body && req.body.nick) || '').trim()
+  const { inicial, novoPin } = req.body || {}
+  const treinador = nick && buscarTreinador(nick)
+  if (!treinador) return res.status(404).json({ erros: ['Esse nick ainda não tem PIN. É só cadastrar um Pokémon para criar.'] })
+  if (!treinador.inicialHash) {
+    return res.status(400).json({ erros: ['Esse nick não escolheu um primeiro Pokémon, então não dá para recuperar o PIN por aqui.'] })
+  }
+
+  const erroPin = validarPin(novoPin)
+  if (erroPin) return res.status(400).json({ erros: ['Novo PIN: ' + erroPin] })
+
+  const bloqueado = bloqueio(treinador.chave)
+  if (bloqueado) return res.status(429).json({ erros: [bloqueado] })
+
+  if (!INICIAIS.includes(inicial) || !confere(inicial, treinador.salt, treinador.inicialHash)) {
+    registrarErro(treinador.chave)
+    return res.status(401).json({ erros: ['Esse não é o primeiro Pokémon cadastrado para este nick'] })
+  }
+
+  tentativas.delete(treinador.chave)
+  // Novo salt para o PIN; o inicial é recalculado com ele para continuar valendo
+  treinador.salt = crypto.randomBytes(16).toString('hex')
+  treinador.pinHash = hashPin(String(novoPin), treinador.salt)
+  guardarInicial(treinador, inicial)
+  treinador.pinAlteradoEm = new Date().toISOString()
+  await db.salvarTreinador(treinador)
+  res.json({ ok: true })
 })
 
 // Um Pokémon só (usado pela tela de edição)
@@ -321,13 +423,13 @@ app.put('/api/pokemons/:id', async function(req, res) {
   if (indice === -1) return res.status(404).json({ erros: ['Pokémon não encontrado'] })
 
   const original = pokemons[indice]
-  const { pokemon, erros } = validarPokemon(req.body || {})
+  const { pokemon, erros } = await validarPokemon(req.body || {})
   if (erros.length > 0) return res.status(400).json({ erros })
 
   if (pokemon.treinador.toLowerCase() !== original.treinador.toLowerCase()) {
     return res.status(403).json({ erros: ['Só quem cadastrou este Pokémon pode editá-lo'] })
   }
-  const auth = await autenticar(original.treinador, req.body.pin)
+  const auth = await autenticar(original.treinador, req.body.pin, req.body.inicial)
   if (!auth.ok) return res.status(auth.status).json({ erros: [auth.erro] })
 
   if (encontrarRepetido(pokemon, original.id)) {
