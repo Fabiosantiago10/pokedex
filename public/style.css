@@ -329,7 +329,7 @@ small {
 
 .resto-item {
   display: grid;
-  grid-template-columns: 34px 64px 1fr 170px;
+  grid-template-columns: 34px 56px 1fr auto;
   grid-template-areas:
     "posicao imagem nome stats"
     "posicao imagem tipos stats"
@@ -949,7 +949,6 @@ table.comparativo .selo {
   .detalhe-imagem { width: 140px; height: 140px; }
   .detalhe-grade { grid-template-columns: 1fr; padding: 12px 14px 0; }
   .painel-largo { margin: 14px; }
-  .resto-item { grid-template-columns: 30px 50px 1fr 130px; }
 }
 
 /* ---------- Palco escuro do Pokémon em cada lugar ---------- */
@@ -1081,13 +1080,36 @@ table.comparativo .selo {
   font-size: 14px;
 }
 
-.resto-stats .stats-lista {
-  margin-top: 0;
-  background: #f4f5f7;
-}
 
 @media (max-width: 720px) {
   .stats-lista { padding: 2px 6px; }
   .stats-lista .atributo { font-size: 11px; }
   .stats-lista .atributo strong { font-size: 12px; }
+}
+
+/* 4º e 5º lugar: status compactos, como na aba Ranking */
+.resto-stats .stats-compactos {
+  grid-template-columns: repeat(6, auto);
+  margin-top: 0;
+}
+
+.resto-stats .stat-compacto {
+  background: #f4f5f7;
+  padding: 3px 7px;
+}
+
+@media (max-width: 720px) {
+  .resto-item {
+    grid-template-columns: 30px 50px 1fr;
+    grid-template-areas:
+      "posicao imagem nome"
+      "posicao imagem tipos"
+      "posicao imagem ivs"
+      "stats stats stats";
+    row-gap: 4px;
+  }
+
+  .resto-stats .stats-compactos {
+    grid-template-columns: repeat(6, 1fr);
+  }
 }
