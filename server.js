@@ -316,7 +316,9 @@ app.post('/api/meus', async function(req, res) {
   const chave = nick.toLowerCase()
   const meus = pokemons.filter(p => p.treinador.toLowerCase() === chave)
   const treinador = buscarTreinador(nick)
-  res.json({ nick: treinador.nick, pinCriado: Boolean(auth.novo), pokemons: meus })
+  // Para o "Testar contra" das Dicas: quem está logado vê de quem é cada Pokémon (sem o apelido)
+  const adversarios = pokemons.map(p => ({ ...publico(p), treinador: p.treinador }))
+  res.json({ nick: treinador.nick, pinCriado: Boolean(auth.novo), pokemons: meus, adversarios })
 })
 
 // Nomes de todas as espécies (autocompletar do cadastro)

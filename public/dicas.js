@@ -8,7 +8,7 @@ const sessao = lerSessao()
 if (!sessao) location.replace('meus.html')
 
 let meusPokemons = []    // Pokémon do treinador logado
-let todosPokemons = []   // Pokémon da base (sem dados do treinador), para testar contra
+let todosPokemons = []   // Pokémon da base com o nick do dono, para testar contra
 let dadosEspecie = null  // dados oficiais da espécie escolhida (tipos, stats base, ataques)
 
 // ---------- Cálculos ----------
@@ -266,13 +266,16 @@ function htmlStatusUteis() {
 }
 
 function htmlPainelBuilds(pokemon) {
+  // Agrupado por treinador: primeiro os amigos (em ordem alfabética), depois os seus
   const outros = todosPokemons.filter(p => !pokemon || p.id !== pokemon.id)
   const grupos = {}
-  outros.forEach(p => { (grupos[p.nome] = grupos[p.nome] || []).push(p) })
-  const opcoes = Object.keys(grupos).sort().map(nome => `
-    <optgroup label="${escaparHtml(nome)}">
-      ${grupos[nome].sort((x, y) => y.pontuacao - x.pontuacao).map(p =>
-        `<option value="${escaparHtml(p.id)}" ${p.id === contraId ? 'selected' : ''}>${escaparHtml(p.nome)} · ${identificacao(p).replace(/<[^>]+>/g, '')}${meusPokemons.some(m => m.id === p.id) ? ' (seu)' : ''}</option>`).join('')}
+  outros.forEach(p => { (grupos[p.treinador] = grupos[p.treinador] || []).push(p) })
+  const souEu = nick => nick.toLowerCase() === sessao.nick.toLowerCase()
+  const treinadores = Object.keys(grupos).sort((x, y) => souEu(x) - souEu(y) || x.localeCompare(y))
+  const opcoes = treinadores.map(nick => `
+    <optgroup label="${souEu(nick) ? 'Seus Pokémon' : 'Pokémon de ' + escaparHtml(nick)}">
+      ${grupos[nick].sort((x, y) => x.nome.localeCompare(y.nome) || y.pontuacao - x.pontuacao).map(p =>
+        `<option value="${escaparHtml(p.id)}" ${p.id === contraId ? 'selected' : ''}>${escaparHtml(p.nome)} de ${escaparHtml(souEu(nick) ? 'você' : nick)} · ${identificacao(p).replace(/<[^>]+>/g, '')}</option>`).join('')}
     </optgroup>
   `).join('')
   const total = ATRIBUTOS.reduce((s, a) => s + dadosEspecie.base[a], 0)
@@ -348,7 +351,7 @@ async function renderizarBuilds() {
   document.getElementById('builds-atual').innerHTML = testeAtual ? `
     <div class="comparar-atual">
       <h4>E o seu ${escaparHtml(pokemon.nome)} do jeito que está hoje?</h4>
-      <p class="explica-builds">Com os EVs, a natureza (${escaparHtml(pokemon.natureza)}) e os ataques cadastrados, contra o ${escaparHtml(oponente.nome)}, os dois no Nv ${nivelSimulacao}:</p>
+      <p class="explica-builds">Com os EVs, a natureza (${escaparHtml(pokemon.natureza)}) e os ataques cadastrados, contra o ${escaparHtml(oponente.nome)} de ${escaparHtml(oponente.treinador)}, os dois no Nv ${nivelSimulacao}:</p>
       ${htmlTeste(testeAtual)}
     </div>
   ` : ''
@@ -485,22 +488,20 @@ async function iniciar() {
   if (!sessao) return
   document.getElementById('nick-logado').textContent = sessao.nick
   try {
-    const [respMeus, respTodos] = await Promise.all([
-      fetch('/api/meus', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nick: sessao.nick, pin: sessao.pin })
-      }),
-      fetch('/api/pokemons')
-    ])
+    const respMeus = await fetch('/api/meus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nick: sessao.nick, pin: sessao.pin })
+    })
     if (respMeus.status === 401 || respMeus.status === 403) {
       encerrarSessao()
       location.replace('meus.html')
       return
     }
-    if (!respMeus.ok || !respTodos.ok) throw new Error(respMeus.status + ' / ' + respTodos.status)
-    meusPokemons = (await respMeus.json()).pokemons
-    todosPokemons = await respTodos.json()
+    if (!respMeus.ok) throw new Error(respMeus.status)
+    const dados = await respMeus.json()
+    meusPokemons = dados.pokemons
+    todosPokemons = dados.adversarios || []
   } catch (erro) {
     statusEl.textContent = 'Não foi possível falar com o servidor. Tente recarregar a página.'
     console.error(erro)
