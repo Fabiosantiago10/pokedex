@@ -25,7 +25,8 @@ async function verificarNick() {
 function agruparPorEspecie(lista) {
   const grupos = {}
   lista.forEach(function(p) {
-    const chave = p.nome.toLowerCase()
+    // Mesma espécie de jogos diferentes fica em grupos separados (não se comparam)
+    const chave = p.nome.toLowerCase() + '|' + plataformaDe(p)
     if (!grupos[chave]) grupos[chave] = []
     grupos[chave].push(p)
   })
@@ -43,7 +44,7 @@ function htmlGrupo(grupo) {
         ${imagemPokemon(primeiro, 'grupo-imagem')}
         <div>
           <h3>${escaparHtml(primeiro.nome)} <span class="total-badge">${grupo.length}</span></h3>
-          <span class="tipos">${badgeTipo(primeiro.tipo1)}${badgeTipo(primeiro.tipo2)}</span>
+          <span class="tipos">${badgeTipo(primeiro.tipo1)}${badgeTipo(primeiro.tipo2)} ${seloPlataforma(primeiro)}</span>
         </div>
       </div>
       <div class="tabela-rolagem">

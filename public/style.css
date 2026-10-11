@@ -183,6 +183,53 @@ nav a.ativo {
 
 .selo-alfa  { background: #ffe5e5; color: #b00000; border: 1px solid #f2a0a0; }
 .selo-shiny { background: #fff7d6; color: #8a6d00; border: 1px solid #f0d870; }
+.selo-plataforma { background: #eef2ff; color: #3b4cb8; border: 1px solid #c3cbf5; }
+
+/* ---------- Filtro de jogo (PokeMMO, Pixelmon, Nintendo) ---------- */
+.filtro-plataforma {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.chip-plataforma {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 2px solid var(--borda);
+  border-radius: 999px;
+  background: var(--cartao);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--texto);
+  cursor: pointer;
+}
+
+.chip-plataforma span {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #eef0f3;
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+.chip-plataforma:hover {
+  border-color: var(--vermelho);
+}
+
+.chip-plataforma.ativo {
+  border-color: var(--vermelho);
+  background: var(--vermelho);
+  color: white;
+}
+
+.chip-plataforma.ativo span {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
 
 .total-badge {
   font-size: 12px;

@@ -35,6 +35,38 @@ function selosVariante(p) {
     (p.shiny ? '<span class="selo selo-shiny" title="Shiny">✨ Shiny</span>' : '')
 }
 
+// Jogo de onde veio o Pokémon. Ranking e batalhas só comparam Pokémon do mesmo jogo,
+// porque cada um tem regras próprias (status base, poder dos ataques, tabela de tipos).
+const PLATAFORMAS = {
+  PokeMMO:  { nome: 'PokeMMO', icone: '🎮' },
+  Pixelmon: { nome: 'Pixelmon (Minecraft)', icone: '⛏️' },
+  Nintendo: { nome: 'Jogos oficiais (Nintendo)', icone: '🕹️' }
+}
+
+// Pokémon cadastrados antes do campo existir são todos do PokeMMO
+function plataformaDe(p) {
+  return PLATAFORMAS[p.plataforma] ? p.plataforma : 'PokeMMO'
+}
+
+function seloPlataforma(p) {
+  const plat = PLATAFORMAS[plataformaDe(p)]
+  return `<span class="selo selo-plataforma" title="${plat.nome}">${plat.icone} ${plat.nome.replace(/ (.*)/, '')}</span>`
+}
+
+// Preferência de jogo (filtros da Pokédex e da Batalha, e o campo do cadastro)
+function plataformaSalva() {
+  try {
+    const p = localStorage.getItem('plataforma')
+    return PLATAFORMAS[p] ? p : 'PokeMMO'
+  } catch (e) {
+    return 'PokeMMO'
+  }
+}
+
+function salvarPlataforma(p) {
+  try { localStorage.setItem('plataforma', p) } catch (e) {}
+}
+
 const SIMBOLO_SEXO = { M: '♂', F: '♀' }
 
 // Ex: '♂ Nv 30 · Serious · "Growl01"' — para reconhecer o Pokémon no jogo.
@@ -220,5 +252,5 @@ function salvarTreinador(nick) {
 
 // O servidor (Node) usa a mesma fórmula de stats, para a nota bater com o que aparece na tela
 if (typeof module !== 'undefined') {
-  module.exports = { calcularStats, NATUREZAS }
+  module.exports = { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe }
 }

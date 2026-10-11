@@ -4,7 +4,7 @@ const path = require('path')
 const crypto = require('crypto')
 const db = require('./db')
 const pokeapi = require('./pokeapi')
-const { calcularStats, NATUREZAS } = require('./public/comum.js')
+const { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe } = require('./public/comum.js')
 
 const app = express()
 
@@ -143,6 +143,15 @@ async function pontuar(pokemon) {
   return calcularPontuacao(pokemon, await statsBase(pokemon.nome))
 }
 
+// Pokémon cadastrados antes do campo "jogo" existir eram todos do PokeMMO
+async function marcarPlataformaAntiga() {
+  const antigos = pokemons.filter(p => !p.plataforma)
+  if (antigos.length === 0) return
+  antigos.forEach(p => { p.plataforma = 'PokeMMO' })
+  await db.salvarVariosPokemons(antigos)
+  console.log(antigos.length + ' Pokémon marcado(s) como PokeMMO')
+}
+
 // Recalcula as notas de toda a base (ex: depois de mudar a fórmula)
 async function recalcularNotas() {
   const alterados = []
@@ -178,6 +187,7 @@ async function validarPokemon(corpo) {
     nome: texto(corpo.nome),
     tipo1: texto(corpo.tipo1, 15),
     tipo2: texto(corpo.tipo2, 15) || null,
+    plataforma: texto(corpo.plataforma, 20),
     natureza: texto(corpo.natureza, 20),
     habilidade: texto(corpo.habilidade),
     // Para reconhecer o Pokémon no jogo (vários da mesma espécie parecem iguais no PC)
@@ -208,6 +218,7 @@ async function validarPokemon(corpo) {
   })
 
   if (!pokemon.treinador) erros.push('Informe o seu nick do jogo')
+  if (!PLATAFORMAS[pokemon.plataforma]) erros.push('Escolha de qual jogo é o Pokémon (PokeMMO, Pixelmon ou jogos oficiais)')
   if (!pokemon.nome) erros.push('Informe o nome do Pokémon')
   if (soma(pokemon.evs) > 510) erros.push('O total de EVs não pode passar de 510')
   if (pokemon.nivel < 1 || pokemon.nivel > 100) erros.push('O nível deve estar entre 1 e 100')
@@ -255,9 +266,12 @@ function mesmaEspecie(nome) {
   return pokemons.filter(p => p.nome.toLowerCase() === alvo)
 }
 
-// Ranking de uma espécie: do mais forte para o mais fraco
-function rankingDaEspecie(nome) {
-  return mesmaEspecie(nome).sort((a, b) => b.pontuacao - a.pontuacao)
+// Ranking de uma espécie num jogo: do mais forte para o mais fraco.
+// Pokémon de jogos diferentes não se comparam (regras diferentes).
+function rankingDaEspecie(nome, plataforma) {
+  return mesmaEspecie(nome)
+    .filter(p => !plataforma || plataformaDe(p) === plataforma)
+    .sort((a, b) => b.pontuacao - a.pontuacao)
 }
 
 // Mesmo treinador com um Pokémon idêntico (espécie, nível, stats, IVs e EVs) = cadastro repetido.
@@ -265,6 +279,7 @@ function rankingDaEspecie(nome) {
 function encontrarRepetido(pokemon, ignorarId) {
   return mesmaEspecie(pokemon.nome).find(p =>
     p.id !== ignorarId &&
+    plataformaDe(p) === pokemon.plataforma &&
     p.treinador.toLowerCase() === pokemon.treinador.toLowerCase() &&
     p.nivel === pokemon.nivel &&
     ATRIBUTOS.every(a =>
@@ -297,7 +312,8 @@ app.get('/api/pokemons', function(req, res) {
 
 // Comparativo de uma espécie entre todos os treinadores
 app.get('/api/ranking/:especie', function(req, res) {
-  const ranking = rankingDaEspecie(req.params.especie)
+  const plataforma = PLATAFORMAS[req.query.plataforma] ? req.query.plataforma : null
+  const ranking = rankingDaEspecie(req.params.especie, plataforma)
   const media = ranking.length
     ? Math.round(ranking.reduce((t, p) => t + p.pontuacao, 0) / ranking.length)
     : 0
@@ -367,7 +383,7 @@ app.post('/api/pokemons', async function(req, res) {
   const auth = await autenticar(pokemon.treinador, req.body.pin, req.body.inicial)
   if (!auth.ok) return res.status(auth.status).json({ erros: [auth.erro] })
 
-  const anteriores = rankingDaEspecie(pokemon.nome)
+  const anteriores = rankingDaEspecie(pokemon.nome, pokemon.plataforma)
 
   if (encontrarRepetido(pokemon)) {
     return res.status(409).json({
@@ -382,7 +398,7 @@ app.post('/api/pokemons', async function(req, res) {
   pokemons.push(pokemon)
   await db.salvarPokemon(pokemon)
 
-  const ranking = rankingDaEspecie(pokemon.nome)
+  const ranking = rankingDaEspecie(pokemon.nome, pokemon.plataforma)
   res.status(201).json({
     pokemon,
     pinCriado: Boolean(auth.novo),
@@ -470,7 +486,7 @@ app.put('/api/pokemons/:id', async function(req, res) {
   pokemons[indice] = pokemon
   await db.salvarPokemon(pokemon)
 
-  const ranking = rankingDaEspecie(pokemon.nome)
+  const ranking = rankingDaEspecie(pokemon.nome, pokemon.plataforma)
   res.json({
     pokemon,
     comparacao: {
@@ -487,7 +503,10 @@ db.iniciar()
     app.listen(PORT, function() {
       console.log('Servidor rodando na porta ' + PORT)
       console.log(pokemons.length + ' Pokémon(s) no banco')
-      recalcularNotas().catch(erro => console.error('Erro ao recalcular notas:', erro))
+      // Um depois do outro: os dois gravam a base
+      marcarPlataformaAntiga()
+        .then(recalcularNotas)
+        .catch(erro => console.error('Erro ao atualizar a base:', erro))
     })
   })
   .catch(function(erro) {

@@ -266,8 +266,9 @@ function htmlStatusUteis() {
 }
 
 function htmlPainelBuilds(pokemon) {
-  // Agrupado por treinador: primeiro os amigos (em ordem alfabética), depois os seus
-  const outros = todosPokemons.filter(p => !pokemon || p.id !== pokemon.id)
+  // Só adversários do mesmo jogo, agrupados por treinador: primeiro os amigos (em ordem alfabética), depois os seus
+  const outros = todosPokemons.filter(p => p.id !== pokemon.id && plataformaDe(p) === plataformaDe(pokemon))
+  if (!outros.some(p => p.id === contraId)) contraId = ''
   const grupos = {}
   outros.forEach(p => { (grupos[p.treinador] = grupos[p.treinador] || []).push(p) })
   const souEu = nick => nick.toLowerCase() === sessao.nick.toLowerCase()
@@ -290,7 +291,7 @@ function htmlPainelBuilds(pokemon) {
       ${total < 350 ? `<p class="alerta">Os status base do ${escaparHtml(dadosEspecie.nome)} são baixos (total ${total}).
         Nenhuma build faz milagre: se ele evolui, vale mais evoluir antes de investir EVs.</p>` : ''}
       <div class="controles-builds">
-        <label>Testar contra (opcional)
+        <label>Testar contra (opcional, só Pokémon do ${escaparHtml(PLATAFORMAS[plataformaDe(pokemon)].nome)})
           <select id="contra">
             <option value="">Nenhum adversário</option>
             ${opcoes}
@@ -447,7 +448,7 @@ function renderizar() {
 
 // ---------- Escolha do Pokémon (só os do treinador logado) ----------
 function rotuloMeu(p) {
-  return `${p.nome} · ${identificacao(p).replace(/<[^>]+>/g, '')} · IVs ${soma(p.ivs)}/186`
+  return `${PLATAFORMAS[plataformaDe(p)].icone} ${p.nome} · ${identificacao(p).replace(/<[^>]+>/g, '')} · IVs ${soma(p.ivs)}/186`
 }
 
 function preencherMeus() {

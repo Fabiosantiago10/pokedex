@@ -153,7 +153,7 @@ function barrasStats(stats, cor) {
 // Ranking da mesma espécie, com o Pokémon aberto destacado (sem nomes de treinador)
 function htmlComparativo(pokemon) {
   const alvo = pokemon.nome.toLowerCase()
-  const ranking = ordenarPorNota(todosPokemons.filter(p => p.nome.toLowerCase() === alvo))
+  const ranking = ordenarPorNota(todosPokemons.filter(p => p.nome.toLowerCase() === alvo && plataformaDe(p) === plataformaDe(pokemon)))
 
   if (ranking.length < 2) {
     return `<p class="vazio-pequeno">Ainda não há outro ${escaparHtml(pokemon.nome)} na base.
@@ -163,7 +163,7 @@ function htmlComparativo(pokemon) {
   const posicao = ranking.findIndex(p => p.id === pokemon.id) + 1
 
   return `
-    <p class="comparativo-resumo"><strong>${posicao}º de ${ranking.length}</strong> ${escaparHtml(pokemon.nome)} na base</p>
+    <p class="comparativo-resumo"><strong>${posicao}º de ${ranking.length}</strong> ${escaparHtml(pokemon.nome)} do ${PLATAFORMAS[plataformaDe(pokemon)].nome} na base</p>
     <div class="tabela-rolagem">
       <table class="comparativo">
         <tr>
@@ -198,7 +198,7 @@ function abrirDetalhe(pokemon) {
       <div class="detalhe-info">
         <span class="card-numero">#${escaparHtml(pokemon.numero)}</span>
         <h2>${escaparHtml(pokemon.nome)}</h2>
-        <div class="tipos">${badgeTipo(pokemon.tipo1)}${badgeTipo(pokemon.tipo2)} ${selosVariante(pokemon)}</div>
+        <div class="tipos">${badgeTipo(pokemon.tipo1)}${badgeTipo(pokemon.tipo2)} ${selosVariante(pokemon)} ${seloPlataforma(pokemon)}</div>
         <p>${identificacao(pokemon)}${pokemon.habilidade ? ' · ' + escaparHtml(pokemon.habilidade) : ''}</p>
       </div>
     </div>
@@ -308,10 +308,37 @@ document.addEventListener('click', function(evento) {
   abrirDetalhe(todosPokemons.find(p => p.id === alvo.dataset.id))
 })
 
+// ---------- Jogo (PokeMMO, Pixelmon, Nintendo) ----------
+// Cada jogo tem o seu pódio e ranking: Pokémon de jogos diferentes não se comparam
+let plataformaAtual = plataformaSalva()
+
+function doJogo(lista) {
+  return lista.filter(p => plataformaDe(p) === plataformaAtual)
+}
+
+function renderizarFiltroPlataforma() {
+  document.getElementById('filtro-plataforma').innerHTML = Object.entries(PLATAFORMAS).map(([id, plat]) => {
+    const total = todosPokemons.filter(p => plataformaDe(p) === id).length
+    return `<button type="button" role="tab" class="chip-plataforma ${id === plataformaAtual ? 'ativo' : ''}" data-plataforma="${id}" aria-selected="${id === plataformaAtual}">
+      ${plat.icone} ${plat.nome} <span>${total}</span>
+    </button>`
+  }).join('')
+}
+
+document.getElementById('filtro-plataforma').addEventListener('click', function(evento) {
+  const botao = evento.target.closest('[data-plataforma]')
+  if (!botao) return
+  plataformaAtual = botao.dataset.plataforma
+  salvarPlataforma(plataformaAtual)
+  renderizarFiltroPlataforma()
+  renderizarPodio(doJogo(todosPokemons))
+  aplicarFiltros()
+})
+
 // ---------- Busca ----------
 function aplicarFiltros() {
   const texto = document.getElementById('busca').value.trim().toLowerCase()
-  const filtrados = ordenarPorNota(todosPokemons.filter(p => p.nome.toLowerCase().includes(texto)))
+  const filtrados = ordenarPorNota(doJogo(todosPokemons).filter(p => p.nome.toLowerCase().includes(texto)))
   document.getElementById('contador').textContent = filtrados.length ? `(${filtrados.length})` : ''
   renderizarCards(filtrados)
 }
@@ -329,7 +356,8 @@ async function carregarPokemons() {
     return
   }
 
-  renderizarPodio(todosPokemons)
+  renderizarFiltroPlataforma()
+  renderizarPodio(doJogo(todosPokemons))
 
   // Vindo do cadastro (index.html?especie=Pikachu): já filtra pela espécie
   const especie = new URLSearchParams(location.search).get('especie')

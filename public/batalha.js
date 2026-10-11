@@ -173,10 +173,53 @@ function rotulo(p) {
   return `${p.nome} · ${identificacao(p).replace(/<[^>]+>/g, '')} · IVs ${soma(p.ivs)}/186`
 }
 
-function preencherSelects() {
+// ---------- Jogo: só batalham Pokémon do mesmo jogo ----------
+let plataformaAtual = plataformaSalva()
+
+function doJogo() {
+  return todosPokemons.filter(p => plataformaDe(p) === plataformaAtual)
+}
+
+function renderizarFiltroPlataforma() {
+  document.getElementById('filtro-plataforma').innerHTML = Object.entries(PLATAFORMAS).map(([id, plat]) => {
+    const total = todosPokemons.filter(p => plataformaDe(p) === id).length
+    return `<button type="button" role="tab" class="chip-plataforma ${id === plataformaAtual ? 'ativo' : ''}" data-plataforma="${id}" aria-selected="${id === plataformaAtual}">
+      ${plat.icone} ${plat.nome} <span>${total}</span>
+    </button>`
+  }).join('')
+}
+
+// Preenche as duas listas com os Pokémon do jogo escolhido e começa com dois diferentes
+function trocarJogo(idA, idB) {
+  renderizarFiltroPlataforma()
+  const lista = doJogo()
+  if (lista.length < 2) {
+    selA.innerHTML = ''
+    selB.innerHTML = ''
+    document.getElementById('resultado').innerHTML = ''
+    statusEl.textContent = `É preciso ter pelo menos 2 Pokémon do ${PLATAFORMAS[plataformaAtual].nome} na base para simular uma batalha.`
+    return
+  }
+  statusEl.textContent = ''
+  preencherSelects(lista)
+  const existe = id => lista.some(p => p.id === id)
+  selA.value = existe(idA) ? idA : lista[0].id
+  selB.value = existe(idB) && idB !== selA.value ? idB : (lista.find(p => p.id !== selA.value) || lista[0]).id
+  atualizar()
+}
+
+document.getElementById('filtro-plataforma').addEventListener('click', function(evento) {
+  const botao = evento.target.closest('[data-plataforma]')
+  if (!botao) return
+  plataformaAtual = botao.dataset.plataforma
+  salvarPlataforma(plataformaAtual)
+  trocarJogo()
+})
+
+function preencherSelects(lista) {
   // Agrupado por espécie, em ordem alfabética
   const grupos = {}
-  todosPokemons.forEach(p => { (grupos[p.nome] = grupos[p.nome] || []).push(p) })
+  lista.forEach(p => { (grupos[p.nome] = grupos[p.nome] || []).push(p) })
   const html = Object.keys(grupos).sort().map(nome => `
     <optgroup label="${escaparHtml(nome)}">
       ${grupos[nome].sort((x, y) => y.pontuacao - x.pontuacao).map(p => `<option value="${escaparHtml(p.id)}">${escaparHtml(rotulo(p))}</option>`).join('')}
@@ -194,21 +237,14 @@ async function iniciar() {
     console.error(erro)
     return
   }
-  if (todosPokemons.length < 2) {
-    statusEl.textContent = 'É preciso ter pelo menos 2 Pokémon na base para simular uma batalha.'
-    return
-  }
-  preencherSelects()
-
-  // Link de batalha (batalha.html?a=...&b=...) ou dois Pokémon diferentes para começar
-  const params = new URLSearchParams(location.search)
-  const existe = id => todosPokemons.some(p => p.id === id)
-  selA.value = existe(params.get('a')) ? params.get('a') : todosPokemons[0].id
-  selB.value = existe(params.get('b')) ? params.get('b') : (todosPokemons.find(p => p.id !== selA.value) || todosPokemons[0]).id
-
   selA.addEventListener('change', atualizar)
   selB.addEventListener('change', atualizar)
-  atualizar()
+
+  // Link de batalha (batalha.html?a=...&b=...): abre no jogo do Pokémon 1
+  const params = new URLSearchParams(location.search)
+  const pokemonA = todosPokemons.find(p => p.id === params.get('a'))
+  if (pokemonA) plataformaAtual = plataformaDe(pokemonA)
+  trocarJogo(params.get('a'), params.get('b'))
 }
 
 iniciar()

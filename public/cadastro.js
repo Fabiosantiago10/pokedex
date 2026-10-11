@@ -133,6 +133,11 @@ const campoPin = document.getElementById('pin')
 const campoInicial = document.getElementById('inicial')
 let infoNick = null  // { temPin, temInicial } do treinador logado
 
+// O jogo fica escolhido para os próximos cadastros
+const campoPlataforma = document.getElementById('plataforma')
+campoPlataforma.value = plataformaSalva()
+campoPlataforma.addEventListener('change', () => salvarPlataforma(campoPlataforma.value))
+
 if (sessaoAtual) {
   campoTreinador.value = sessaoAtual.nick
   campoPin.value = sessaoAtual.pin
@@ -384,6 +389,7 @@ async function salvarPokemon() {
 
   const pokemon = {
     treinador: treinador,
+    plataforma: document.getElementById('plataforma').value,
     numero: document.getElementById('numero').value,
     nome: nome,
     tipo1: document.getElementById('tipo1').value,
@@ -504,7 +510,7 @@ const idEdicao = new URLSearchParams(location.search).get('editar')
 
 function preencherFormulario(p) {
   const campos = {
-    treinador: p.treinador, numero: p.numero, nome: p.nome, tipo1: p.tipo1, tipo2: p.tipo2 || '',
+    treinador: p.treinador, plataforma: plataformaDe(p), numero: p.numero, nome: p.nome, tipo1: p.tipo1, tipo2: p.tipo2 || '',
     natureza: p.natureza, habilidade: p.habilidade, nivel: p.nivel, proxNivel: p.proxNivel,
     apelido: p.apelido, sexo: p.sexo,
     felicidade: p.stats.felicidade
@@ -570,7 +576,7 @@ if (idEdicao) iniciarEdicao()
 function limparFormulario() {
   document.querySelectorAll('.formulario-container input, .formulario-container select').forEach(function(campo) {
     // O nick continua: normalmente se cadastra vários Pokémon em sequência
-    if (campo.id === 'treinador' || campo.id === 'pin' || campo.id === 'inicial') return
+    if (campo.id === 'treinador' || campo.id === 'pin' || campo.id === 'inicial' || campo.id === 'plataforma') return
     if (campo.type === 'checkbox' || campo.type === 'radio') {
       campo.checked = false
       return
