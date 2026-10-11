@@ -133,6 +133,14 @@
 }
 
 /* ---------- Planta: folhas caindo e balançando ---------- */
+/* Planta: a floresta com cachoeira no fundo, um pouco escurecida para o Pokémon se destacar */
+.palco.efeito-grass {
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.45) 100%),
+    url('img/fundo-planta.jpg') center 60% / cover no-repeat,
+    #1f3a1c;
+}
+
 .efeito-grass .aura {
   background: radial-gradient(circle, rgba(120, 200, 80, 0.35) 0%, rgba(120, 200, 80, 0) 70%);
 }
