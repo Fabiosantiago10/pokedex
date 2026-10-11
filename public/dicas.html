@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dicas de Batalha</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="efeitos.css">
+  <link rel="stylesheet" href="dicas.css">
+</head>
+
+<body>
+
+  <header class="topo">
+    <div class="topo-conteudo">
+      <a href="index.html" class="marca"><span class="pokebola"></span> Minha Pokédex</a>
+      <nav>
+        <a href="index.html">Pokédex</a>
+        <a href="dicas.html" class="ativo">Dicas</a>
+        <a href="meus.html">Meus Pokémon</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="secao-pagina">
+    <h2 class="titulo-secao">💡 Dicas de batalha</h2>
+    <p class="intro">
+      Escolha um Pokémon e veja quais ataques ele pode aprender que causam <strong>mais dano</strong>.
+      Dois Pokémon iguais, com os mesmos IVs e EVs, podem ter resultados bem diferentes só pela escolha dos ataques.
+    </p>
+
+    <div class="escolha">
+      <label>Pokémon
+        <input type="text" id="especie" list="lista-especies" placeholder="Ex: Magikarp" autocomplete="off">
+      </label>
+      <label>Usar os stats de
+        <select id="qual" disabled>
+          <option value="">Escolha o Pokémon primeiro</option>
+        </select>
+      </label>
+    </div>
+    <p id="status" class="status"></p>
+
+    <div id="resultado"></div>
+
+    <details class="explicacao">
+      <summary>Como a força dos ataques é calculada?</summary>
+      <ul>
+        <li><strong>Poder:</strong> quanto o ataque bate. Ataques de status (como Splash) têm poder 0 e não causam dano.</li>
+        <li><strong>Precisão:</strong> um ataque com 80% de precisão erra 1 em cada 5 vezes, então rende menos na média.</li>
+        <li><strong>STAB (1,5×):</strong> ataque do mesmo tipo do Pokémon causa 50% a mais de dano.</li>
+        <li><strong>Físico ou Especial:</strong> ataques físicos usam o Ataque; especiais usam o Atq. Esp.
+          O Pokémon causa mais dano com a categoria em que o stat dele é mais alto.</li>
+        <li><strong>Efetividade:</strong> contra o tipo certo o dano dobra (2×) ou até quadruplica (4×).
+          Por isso a sugestão tenta variar os tipos dos 4 ataques.</li>
+      </ul>
+      <p>A lista junta os ataques de todos os jogos oficiais, então um ou outro pode não existir no PokeMMO.</p>
+    </details>
+  </section>
+
+  <datalist id="lista-especies"></datalist>
+
+  <script src="comum.js"></script>
+  <script src="dicas.js"></script>
+
+</body>
+
+</html>

@@ -1109,3 +1109,16 @@ table.comparativo .selo {
   .abas-botoes { width: 100%; }
   .aba { flex: 1; text-align: center; padding: 9px 10px; }
 }
+
+/* Atalho para a página de Dicas, na janela de detalhes */
+.link-dicas {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vermelho);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.link-dicas:hover {
+  text-decoration: underline;
+}

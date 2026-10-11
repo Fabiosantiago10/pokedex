@@ -235,7 +235,10 @@ function abrirDetalhe(pokemon) {
       </div>
 
       <div class="painel">
-        <div class="painel-cabecalho"><h3>Ataques</h3></div>
+        <div class="painel-cabecalho">
+          <h3>Ataques</h3>
+          <a class="link-dicas" href="dicas.html?id=${encodeURIComponent(pokemon.id)}">💡 Ver melhores ataques</a>
+        </div>
         <div class="ataques">
           ${pokemon.movimentos.map(m => `
             <span class="ataque" style="border-color:${corTipo(m.tipo)}">

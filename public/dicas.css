@@ -1,0 +1,256 @@
+.intro {
+  margin: -6px 0 18px 0;
+  color: var(--texto-suave);
+  max-width: 760px;
+}
+
+/* ---------- Escolha do Pokémon ---------- */
+.escolha {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 14px;
+  padding: 16px;
+  background: var(--cartao);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+}
+
+.escolha label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.escolha input,
+.escolha select {
+  padding: 10px 14px;
+  border: 2px solid var(--borda);
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  background: white;
+  outline: none;
+}
+
+.escolha input:focus,
+.escolha select:focus {
+  border-color: var(--vermelho);
+}
+
+.status {
+  min-height: 20px;
+  margin: 8px 0;
+  color: var(--texto-suave);
+  font-size: 14px;
+}
+
+#resultado {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ---------- Resumo do Pokémon ---------- */
+.resumo-dicas {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 20px;
+  align-items: center;
+  padding: 16px;
+  background: var(--cartao);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+}
+
+.resumo-dicas .palco {
+  width: 170px;
+  height: 150px;
+  border-radius: 14px;
+  --tamanho-aura: 130px;
+}
+
+.dicas-imagem {
+  width: 120px;
+  height: 120px;
+}
+
+.resumo-dicas h3 {
+  margin: 0 0 4px 0;
+  font-size: 24px;
+}
+
+.resumo-dicas p {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+}
+
+.explica {
+  font-size: 12px !important;
+  color: var(--texto-suave);
+}
+
+/* ---------- Ataques atuais ---------- */
+.lista-atuais {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista-atuais li {
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--borda);
+  font-size: 14px;
+}
+
+.lista-atuais li:last-child {
+  border-bottom: none;
+}
+
+.lista-atuais li.sem-dano {
+  color: #cc0000;
+}
+
+.alerta {
+  margin: 10px 0 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff4e5;
+  border: 1px solid #f5c26b;
+  font-size: 14px;
+}
+
+/* ---------- Sugestão de 4 ataques ---------- */
+.grade-sugestao {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.ataque-sugerido {
+  padding: 12px;
+  border-radius: 12px;
+  border-left: 6px solid var(--cor);
+  background: #f7f8fa;
+}
+
+.ataque-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ataque-topo strong {
+  font-size: 16px;
+}
+
+.ataque-topo .badge {
+  margin: 0;
+}
+
+.ataque-info {
+  font-size: 12px;
+  color: var(--texto-suave);
+  margin-bottom: 8px;
+}
+
+.ataque-como {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a8f3c;
+}
+
+.ataque-como.bloqueado {
+  color: #b36b00;
+}
+
+.tag-stab {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: #fff1c2;
+  color: #8a6d00;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.cobertura {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.cobertura p {
+  margin: 6px 0;
+}
+
+.cobertura .badge {
+  margin-bottom: 2px;
+}
+
+.nenhum {
+  color: var(--texto-suave);
+}
+
+/* ---------- Tabela com todos os ataques ---------- */
+.tabela-ataques {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tabela-ataques th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--texto-suave);
+  padding: 8px 6px;
+  border-bottom: 2px solid var(--borda);
+  white-space: nowrap;
+}
+
+.tabela-ataques td {
+  padding: 7px 6px;
+  border-bottom: 1px solid #f0f2f4;
+  white-space: nowrap;
+}
+
+.tabela-ataques td .badge {
+  margin: 0;
+}
+
+.tabela-ataques tr.bloqueado td {
+  opacity: 0.55;
+}
+
+.col-forca {
+  min-width: 120px;
+}
+
+/* ---------- Explicação ---------- */
+.explicacao {
+  margin-top: 24px;
+  padding: 14px 18px;
+  background: var(--cartao);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  font-size: 14px;
+}
+
+.explicacao summary {
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.explicacao li {
+  margin: 6px 0;
+}
+
+@media (max-width: 720px) {
+  .escolha { grid-template-columns: 1fr; }
+  .resumo-dicas { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+}

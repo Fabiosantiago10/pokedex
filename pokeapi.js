@@ -52,11 +52,21 @@ async function listarEspecies() {
   return cache.especies
 }
 
+const CATEGORIAS = { physical: 'Físico', special: 'Especial', status: 'Status' }
+
+// Nome, tipo, poder, precisão e categoria (Físico/Especial/Status) de um ataque
 async function detalheAtaque(slug) {
-  if (!cache.ataques[slug]) {
+  // Entradas antigas do cache não têm poder/precisão/categoria: busca de novo
+  if (!cache.ataques[slug] || !('categoria' in cache.ataques[slug])) {
     const dados = await buscarJson(`${API}/move/${slug}`)
     if (!dados) return null
-    cache.ataques[slug] = { nome: nomeEmIngles(dados, slug), tipo: formatarNome(dados.type.name) }
+    cache.ataques[slug] = {
+      nome: nomeEmIngles(dados, slug),
+      tipo: formatarNome(dados.type.name),
+      poder: dados.power,          // null para ataques de status ou de poder variável
+      precisao: dados.accuracy,    // null para ataques que nunca erram
+      categoria: CATEGORIAS[dados.damage_class && dados.damage_class.name] || 'Status'
+    }
   }
   return cache.ataques[slug]
 }
@@ -105,8 +115,9 @@ const NOMES_STATS = {
 
 async function dadosDoPokemon(nome) {
   const slug = paraSlug(nome)
-  // Entradas antigas do cache não têm os stats base: busca de novo
-  if (cache.pokemons[slug] && cache.pokemons[slug].base) return cache.pokemons[slug]
+  // Entradas antigas do cache não têm os stats base nem o poder dos ataques: busca de novo
+  const salvo = cache.pokemons[slug]
+  if (salvo && salvo.base && (salvo.ataques.length === 0 || 'categoria' in salvo.ataques[0])) return salvo
 
   // A espécie diz qual é a forma padrão (ex: "deoxys" -> "deoxys-normal")
   const especie = await buscarJson(`${API}/pokemon-species/${slug}`)
@@ -120,7 +131,7 @@ async function dadosDoPokemon(nome) {
 
   const ataques = await emParalelo(aprendidos, 10, async function(m) {
     const detalhe = await detalheAtaque(m.slug)
-    return detalhe && { nome: detalhe.nome, tipo: detalhe.tipo, metodos: m.metodos }
+    return detalhe && { ...detalhe, metodos: m.metodos }
   })
 
   const resultado = {
