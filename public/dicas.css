@@ -511,6 +511,10 @@
   margin-top: 12px;
 }
 
+.escolha.escolha-unica {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 720px) {
   .escolha { grid-template-columns: 1fr; }
   .resumo-dicas { grid-template-columns: 1fr; justify-items: center; text-align: center; }

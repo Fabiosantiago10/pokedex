@@ -202,6 +202,14 @@
   font-weight: 600;
 }
 
+.col-acoes {
+  white-space: nowrap;
+}
+
+.col-acoes .link-editar + .link-editar {
+  margin-left: 10px;
+}
+
 .link-editar {
   color: var(--vermelho);
   font-weight: 600;

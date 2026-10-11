@@ -237,7 +237,6 @@ function abrirDetalhe(pokemon) {
       <div class="painel">
         <div class="painel-cabecalho">
           <h3>Ataques</h3>
-          <a class="link-dicas" href="dicas.html?id=${encodeURIComponent(pokemon.id)}">💡 Ver melhores ataques</a>
           <a class="link-dicas" href="batalha.html?a=${encodeURIComponent(pokemon.id)}">⚔️ Simular batalha</a>
         </div>
         <div class="ataques">

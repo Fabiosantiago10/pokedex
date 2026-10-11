@@ -1,11 +1,14 @@
 // Dicas de batalha: quais ataques causam mais dano para um Pokémon.
 // Força estimada de um ataque = poder × precisão × STAB × (stat usado ÷ maior stat de ataque)
-const campoEspecie = document.getElementById('especie')
 const campoQual = document.getElementById('qual')
 const statusEl = document.getElementById('status')
 
-let especies = []        // nomes de todas as espécies (autocompletar)
-let todosPokemons = []   // Pokémon da base (sem dados do treinador)
+// Só funciona com o login de "Meus Pokémon": as dicas são para os Pokémon do próprio treinador
+const sessao = lerSessao()
+if (!sessao) location.replace('meus.html')
+
+let meusPokemons = []    // Pokémon do treinador logado
+let todosPokemons = []   // Pokémon da base (sem dados do treinador), para testar contra
 let dadosEspecie = null  // dados oficiais da espécie escolhida (tipos, stats base, ataques)
 
 // ---------- Cálculos ----------
@@ -149,7 +152,7 @@ function dadosDaEspecie(nome) {
 }
 
 function pokemonAtual() {
-  return todosPokemons.find(p => p.id === campoQual.value) || null
+  return meusPokemons.find(p => p.id === campoQual.value) || null
 }
 
 // O Pokémon recalculado num nível, para comparar os dois no mesmo nível
@@ -269,7 +272,7 @@ function htmlPainelBuilds(pokemon) {
   const opcoes = Object.keys(grupos).sort().map(nome => `
     <optgroup label="${escaparHtml(nome)}">
       ${grupos[nome].sort((x, y) => y.pontuacao - x.pontuacao).map(p =>
-        `<option value="${escaparHtml(p.id)}" ${p.id === contraId ? 'selected' : ''}>${escaparHtml(p.nome)} · ${identificacao(p).replace(/<[^>]+>/g, '')}</option>`).join('')}
+        `<option value="${escaparHtml(p.id)}" ${p.id === contraId ? 'selected' : ''}>${escaparHtml(p.nome)} · ${identificacao(p).replace(/<[^>]+>/g, '')}${meusPokemons.some(m => m.id === p.id) ? ' (seu)' : ''}</option>`).join('')}
     </optgroup>
   `).join('')
   const total = ATRIBUTOS.reduce((s, a) => s + dadosEspecie.base[a], 0)
@@ -358,7 +361,7 @@ function renderizar() {
     return
   }
 
-  const pokemon = todosPokemons.find(p => p.id === campoQual.value) || null
+  const pokemon = pokemonAtual()
   const stats = pokemon ? pokemon.stats : dadosEspecie.base
   const nivel = pokemon ? pokemon.nivel : 100
   const ataques = analisarAtaques(dadosEspecie, stats, nivel)
@@ -439,69 +442,82 @@ function renderizar() {
   renderizarBuilds()
 }
 
-// ---------- Escolha do Pokémon ----------
-function preencherOpcoes(nome, idPreferido) {
-  const daEspecie = todosPokemons
-    .filter(p => p.nome.toLowerCase() === nome.toLowerCase())
-    .sort((a, b) => b.pontuacao - a.pontuacao)
-  campoQual.innerHTML = daEspecie.map((p, i) =>
-    `<option value="${escaparHtml(p.id)}">${i + 1}º da base · ${identificacao(p).replace(/<[^>]+>/g, '')} · IVs ${soma(p.ivs)}/186</option>`
-  ).join('') + '<option value="">Só a espécie (stats base)</option>'
+// ---------- Escolha do Pokémon (só os do treinador logado) ----------
+function rotuloMeu(p) {
+  return `${p.nome} · ${identificacao(p).replace(/<[^>]+>/g, '')} · IVs ${soma(p.ivs)}/186`
+}
+
+function preencherMeus() {
+  const grupos = {}
+  meusPokemons.forEach(p => { (grupos[p.nome] = grupos[p.nome] || []).push(p) })
+  campoQual.innerHTML = Object.keys(grupos).sort().map(nome => `
+    <optgroup label="${escaparHtml(nome)}">
+      ${grupos[nome].sort((x, y) => y.pontuacao - x.pontuacao).map(p => `<option value="${escaparHtml(p.id)}">${escaparHtml(rotuloMeu(p))}</option>`).join('')}
+    </optgroup>
+  `).join('')
   campoQual.disabled = false
-  campoQual.value = idPreferido || (daEspecie[0] ? daEspecie[0].id : '')
 }
 
-let ultimaEspecie = ''
-
-async function escolherEspecie(nome, idPreferido) {
-  if (!nome || nome.toLowerCase() === ultimaEspecie) return
-  ultimaEspecie = nome.toLowerCase()
-  statusEl.textContent = `Buscando os ataques de ${nome}...`
-  try {
-    const resposta = await fetch('/api/especies/' + encodeURIComponent(nome))
-    if (resposta.status === 404) {
-      statusEl.textContent = `"${nome}" não é um Pokémon.`
-      dadosEspecie = null
-      renderizar()
-      return
-    }
-    if (!resposta.ok) throw new Error(resposta.status)
-    dadosEspecie = await resposta.json()
-    campoEspecie.value = dadosEspecie.nome
-    statusEl.textContent = ''
-    preencherOpcoes(dadosEspecie.nome, idPreferido)
-    renderizar()
-  } catch (erro) {
-    ultimaEspecie = ''
+async function escolherPokemon() {
+  const pokemon = pokemonAtual()
+  if (!pokemon) return
+  history.replaceState(null, '', '?id=' + encodeURIComponent(pokemon.id))
+  statusEl.textContent = `Buscando os ataques de ${pokemon.nome}...`
+  const dados = await dadosDaEspecie(pokemon.nome)
+  if (pokemonAtual() !== pokemon) return  // trocou de Pokémon enquanto buscava
+  if (!dados) {
     statusEl.textContent = 'Não foi possível buscar os dados agora. Tente de novo.'
-    console.error(erro)
+    return
   }
+  dadosEspecie = dados
+  statusEl.textContent = ''
+  renderizar()
 }
 
-campoEspecie.addEventListener('input', function() {
-  const nome = campoEspecie.value.trim().toLowerCase()
-  const encontrado = especies.find(e => e.toLowerCase() === nome)
-  if (encontrado) escolherEspecie(encontrado)
+campoQual.addEventListener('change', escolherPokemon)
+
+document.getElementById('sair').addEventListener('click', function() {
+  encerrarSessao()
+  location.href = 'meus.html'
 })
-campoEspecie.addEventListener('change', () => escolherEspecie(campoEspecie.value.trim()))
-campoQual.addEventListener('change', renderizar)
 
 async function iniciar() {
+  if (!sessao) return
+  document.getElementById('nick-logado').textContent = sessao.nick
   try {
-    const [respEspecies, respPokemons] = await Promise.all([fetch('/api/especies'), fetch('/api/pokemons')])
-    especies = await respEspecies.json()
-    todosPokemons = await respPokemons.json()
-    document.getElementById('lista-especies').innerHTML = especies.map(e => `<option value="${escaparHtml(e)}">`).join('')
+    const [respMeus, respTodos] = await Promise.all([
+      fetch('/api/meus', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nick: sessao.nick, pin: sessao.pin })
+      }),
+      fetch('/api/pokemons')
+    ])
+    if (respMeus.status === 401 || respMeus.status === 403) {
+      encerrarSessao()
+      location.replace('meus.html')
+      return
+    }
+    if (!respMeus.ok || !respTodos.ok) throw new Error(respMeus.status + ' / ' + respTodos.status)
+    meusPokemons = (await respMeus.json()).pokemons
+    todosPokemons = await respTodos.json()
   } catch (erro) {
     statusEl.textContent = 'Não foi possível falar com o servidor. Tente recarregar a página.'
     console.error(erro)
     return
   }
 
-  // Vindo dos detalhes de um Pokémon (dicas.html?id=...): já abre com ele
+  if (meusPokemons.length === 0) {
+    campoQual.innerHTML = '<option value="">Você ainda não cadastrou nenhum Pokémon</option>'
+    statusEl.innerHTML = 'Cadastre um Pokémon em <a href="cadastro.html">➕ Cadastrar Pokémon</a> para ver as dicas dele.'
+    return
+  }
+  preencherMeus()
+
+  // Vindo de "Meus Pokémon" (dicas.html?id=...): já abre com ele
   const id = new URLSearchParams(location.search).get('id')
-  const pokemon = id && todosPokemons.find(p => p.id === id)
-  if (pokemon) escolherEspecie(pokemon.nome, pokemon.id)
+  if (meusPokemons.some(p => p.id === id)) campoQual.value = id
+  escolherPokemon()
 }
 
 iniciar()

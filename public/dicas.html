@@ -21,27 +21,33 @@
       <nav>
         <a href="index.html">Pokédex</a>
         <a href="batalha.html">Batalha</a>
-        <a href="dicas.html" class="ativo">Dicas</a>
-        <a href="meus.html">Meus Pokémon</a>
+        <a href="meus.html" class="ativo">Meus Pokémon</a>
       </nav>
     </div>
   </header>
 
   <section class="secao-pagina">
-    <h2 class="titulo-secao">💡 Dicas de batalha</h2>
+    <div class="abas-treinador">
+      <span class="logado-como">Treinador: <strong id="nick-logado"></strong></span>
+      <div class="abas-botoes">
+        <a href="meus.html" class="aba">📋 Meus Pokémon cadastrados</a>
+        <a href="cadastro.html" class="aba">➕ Cadastrar Pokémon</a>
+        <a href="dicas.html" class="aba ativa">💡 Dicas e builds</a>
+        <button type="button" class="aba aba-sair" id="sair">Sair</button>
+      </div>
+    </div>
+
+    <h2 class="titulo-secao">💡 Dicas e builds</h2>
     <p class="intro">
-      Escolha um Pokémon e veja as <strong>melhores builds</strong> (EVs, natureza e ataques) para cada estratégia,
+      Escolha um dos <strong>seus</strong> Pokémon e veja as <strong>melhores builds</strong> (EVs, natureza e ataques) para cada estratégia,
       quais ataques causam <strong>mais dano</strong> e quais ataques de status valem a pena.
       Dá para testar cada build contra um Pokémon da base.
     </p>
 
-    <div class="escolha">
-      <label>Pokémon
-        <input type="text" id="especie" list="lista-especies" placeholder="Ex: Magikarp" autocomplete="off">
-      </label>
-      <label>Usar os stats de
+    <div class="escolha escolha-unica">
+      <label>Seu Pokémon
         <select id="qual" disabled>
-          <option value="">Escolha o Pokémon primeiro</option>
+          <option value="">Carregando os seus Pokémon...</option>
         </select>
       </label>
     </div>
@@ -81,7 +87,6 @@
     </details>
   </section>
 
-  <datalist id="lista-especies"></datalist>
 
   <script src="comum.js"></script>
   <script src="motor.js"></script>

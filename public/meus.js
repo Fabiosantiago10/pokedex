@@ -59,7 +59,10 @@ function htmlGrupo(grupo) {
                 ${barra(soma(p.ivs), 186, cor)}
               </td>
               <td>${soma(p.evs)}</td>
-              <td><a class="link-editar" href="cadastro.html?editar=${encodeURIComponent(p.id)}">Editar</a></td>
+              <td class="col-acoes">
+                <a class="link-editar" href="cadastro.html?editar=${encodeURIComponent(p.id)}">Editar</a>
+                <a class="link-editar" href="dicas.html?id=${encodeURIComponent(p.id)}">💡 Builds</a>
+              </td>
             </tr>
           `).join('')}
         </table>
