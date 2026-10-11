@@ -1,0 +1,345 @@
+.intro {
+  margin: -6px 0 18px 0;
+  color: var(--texto-suave);
+  max-width: 760px;
+}
+
+/* ---------- Escolha dos dois Pokémon ---------- */
+.escolha-batalha {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 14px;
+  padding: 16px;
+  background: var(--cartao);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+}
+
+.escolha-batalha label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.escolha-batalha select {
+  padding: 10px 14px;
+  border: 2px solid var(--borda);
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  background: white;
+  outline: none;
+}
+
+.escolha-batalha select:focus {
+  border-color: var(--vermelho);
+}
+
+.vs {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--vermelho);
+  padding-bottom: 8px;
+}
+
+.status {
+  min-height: 20px;
+  margin: 8px 0;
+  color: var(--texto-suave);
+  font-size: 14px;
+}
+
+/* ---------- Placar ---------- */
+.placar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  background: var(--cartao);
+  border-radius: var(--raio) var(--raio) 0 0;
+  box-shadow: var(--sombra);
+  text-align: center;
+}
+
+.placar-lado {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.placar-pct {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--texto);
+}
+
+.placar-lado.vencedor .placar-pct {
+  color: #1a8f3c;
+}
+
+.placar-meio {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+.placar-empate {
+  font-weight: 700;
+}
+
+.barra-placar {
+  display: flex;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 0 0 var(--raio) var(--raio);
+  box-shadow: var(--sombra);
+}
+
+.barra-placar span {
+  display: block;
+  height: 100%;
+}
+
+.veredito {
+  margin: 14px 0 8px 0;
+  font-size: 15px;
+}
+
+.botao-link {
+  padding: 8px 16px;
+  border: 2px solid var(--borda);
+  border-radius: 999px;
+  background: white;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 18px;
+}
+
+.botao-link:hover {
+  border-color: var(--vermelho);
+}
+
+/* ---------- Os dois lados ---------- */
+.lados {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.lado {
+  padding: 16px;
+  background: var(--cartao);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+}
+
+.lado-topo {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.lado-topo .palco {
+  width: 120px;
+  height: 110px;
+  border-radius: 12px;
+  --tamanho-aura: 96px;
+}
+
+.batalha-imagem {
+  width: 90px;
+  height: 90px;
+}
+
+.lado-topo h3 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+}
+
+.lado-topo p {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+.stats-lado {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.stats-lado .stat-compacto {
+  background: #f4f5f7;
+}
+
+.lado h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+}
+
+.golpe {
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border-left: 5px solid var(--cor, #ccc);
+  border-radius: 10px;
+  background: #f7f8fa;
+  font-size: 13px;
+}
+
+.golpe.melhor {
+  background: #fffbea;
+  box-shadow: inset 0 0 0 1px #f5d26b;
+}
+
+.golpe.sem-dano {
+  border-left-color: #cc0000;
+  color: #cc0000;
+}
+
+.golpe.sem-dano span {
+  font-weight: 500;
+}
+
+.golpe .badge {
+  margin: 0 4px 0 0;
+}
+
+.golpe-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.golpe-info {
+  margin: 4px 0;
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+.golpe-dano {
+  font-size: 13px;
+}
+
+.tag-melhor {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: #1a8f3c;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tag-stab {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: #fff1c2;
+  color: #8a6d00;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.efet {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.efet.super  { background: #e3f6e8; color: #1a8f3c; }
+.efet.pouco  { background: #fff1e0; color: #b36b00; }
+.efet.nulo   { background: #fde8e8; color: #cc0000; }
+.efet.normal { background: #eef0f3; color: var(--texto-suave); }
+
+/* ---------- IVs e EVs ---------- */
+.painel-ivs {
+  margin-top: 16px;
+}
+
+.explica-ivs {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: var(--texto-suave);
+}
+
+.grade-ivs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.ivs-evs {
+  padding: 12px;
+  border-radius: 12px;
+  background: #f7f8fa;
+  font-size: 13px;
+}
+
+.ivs-evs h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+}
+
+.ivs-evs p {
+  margin: 8px 0 0 0;
+}
+
+.tabela-ivs {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela-ivs td {
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--borda);
+}
+
+.tabela-ivs td:last-child {
+  text-align: right;
+}
+
+/* ---------- Explicação ---------- */
+.explicacao {
+  margin-top: 24px;
+  padding: 14px 18px;
+  background: var(--cartao);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  font-size: 14px;
+}
+
+.explicacao summary {
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.explicacao li {
+  margin: 6px 0;
+}
+
+@media (max-width: 720px) {
+  .escolha-batalha { grid-template-columns: 1fr; }
+  .vs { text-align: center; padding: 0; }
+  .lados, .grade-ivs { grid-template-columns: 1fr; }
+  .placar-pct { font-size: 30px; }
+  .stats-lado { grid-template-columns: repeat(3, 1fr); }
+}

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Batalha 1x1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="efeitos.css">
+  <link rel="stylesheet" href="batalha.css">
+</head>
+
+<body>
+
+  <header class="topo">
+    <div class="topo-conteudo">
+      <a href="index.html" class="marca"><span class="pokebola"></span> Minha Pokédex</a>
+      <nav>
+        <a href="index.html">Pokédex</a>
+        <a href="batalha.html" class="ativo">Batalha</a>
+        <a href="dicas.html">Dicas</a>
+        <a href="meus.html">Meus Pokémon</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="secao-pagina">
+    <h2 class="titulo-secao">⚔️ Simulador de batalha 1x1</h2>
+    <p class="intro">
+      Escolha dois Pokémon da base e veja quem ganha com os ataques, stats, IVs e EVs que estão cadastrados,
+      sem precisar batalhar no jogo.
+    </p>
+
+    <div class="escolha-batalha">
+      <label>Pokémon 1
+        <select id="lado-a"></select>
+      </label>
+      <span class="vs">VS</span>
+      <label>Pokémon 2
+        <select id="lado-b"></select>
+      </label>
+    </div>
+    <p id="status" class="status"></p>
+
+    <div id="resultado"></div>
+
+    <details class="explicacao">
+      <summary>Como a batalha é simulada?</summary>
+      <ul>
+        <li>O dano usa a fórmula dos jogos: nível, poder do ataque, Ataque (ou Atq. Esp) de quem bate e Defesa (ou Def. Esp) de quem apanha.</li>
+        <li>Depois entram o STAB (1,5× se o ataque é do mesmo tipo do Pokémon), a efetividade de tipo (2×, 0,5×, 0×)
+          e uma variação aleatória de 85% a 100%, como no jogo.</li>
+        <li>Quem tem mais Velocidade ataca primeiro (empate = sorteio). Cada um usa o seu ataque mais forte contra o outro.</li>
+        <li>São simuladas 3.000 batalhas, com erros de precisão e acertos críticos (1 em 16, dano 2×), para calcular a chance de vitória.</li>
+        <li>Não entram: habilidades, itens, clima, ataques de status, aumentos de stat, efeitos especiais (como o Bounce levar 2 turnos)
+          e ataques de poder variável.</li>
+      </ul>
+    </details>
+  </section>
+
+  <script src="comum.js"></script>
+  <script src="batalha.js"></script>
+
+</body>
+
+</html>
