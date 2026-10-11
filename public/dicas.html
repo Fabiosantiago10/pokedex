@@ -30,8 +30,9 @@
   <section class="secao-pagina">
     <h2 class="titulo-secao">💡 Dicas de batalha</h2>
     <p class="intro">
-      Escolha um Pokémon e veja quais ataques ele pode aprender que causam <strong>mais dano</strong>.
-      Dois Pokémon iguais, com os mesmos IVs e EVs, podem ter resultados bem diferentes só pela escolha dos ataques.
+      Escolha um Pokémon e veja as <strong>melhores builds</strong> (EVs, natureza e ataques) para cada estratégia,
+      quais ataques causam <strong>mais dano</strong> e quais ataques de status valem a pena.
+      Dá para testar cada build contra um Pokémon da base.
     </p>
 
     <div class="escolha">
@@ -47,6 +48,23 @@
     <p id="status" class="status"></p>
 
     <div id="resultado"></div>
+
+    <details class="explicacao" open>
+      <summary>Como pensar os EVs (vale para qualquer Pokémon)</summary>
+      <ul>
+        <li><strong>Escolha pelos status base, não pelo tipo.</strong> Ser Voador não quer dizer que é rápido (o Skarmory é lento e muito resistente),
+          e ser Elétrico não quer dizer que é especial (o Zekrom bate mais forte com ataques físicos). Veja qual stat base é mais alto.</li>
+        <li><strong>Concentre em 2 stats:</strong> 252 + 252 + 4. São 510 EVs no total e no máximo 252 por stat.
+          Espalhar um pouco em tudo deixa o Pokémon mediano em tudo.</li>
+        <li><strong>Só Velocidade não basta:</strong> ser o primeiro a atacar só ajuda se o golpe fizer estrago.
+          Por isso Velocidade quase sempre vem junto com Ataque ou Atq. Esp.</li>
+        <li><strong>HP cheio ou equilibrar?</strong> Dá para fazer os dois: 252 em HP e 252 na Defesa (ou Def. Esp).
+          A resistência depende do HP e da defesa juntos, então os dois somados rendem mais que um só.</li>
+        <li><strong>Não coloque EV no ataque que você não usa.</strong> Atacante físico não precisa de Atq. Esp, e a natureza pode tirar dele.</li>
+        <li><strong>Natureza vale 10%:</strong> sobe um stat e desce outro. Escolha uma que desça o stat que você não usa.</li>
+        <li><strong>Nível pesa muito:</strong> no nível baixo IVs e EVs quase não aparecem; no 50 e no 100 fazem diferença.</li>
+      </ul>
+    </details>
 
     <details class="explicacao">
       <summary>Como a força dos ataques é calculada?</summary>
@@ -66,6 +84,8 @@
   <datalist id="lista-especies"></datalist>
 
   <script src="comum.js"></script>
+  <script src="motor.js"></script>
+  <script src="builds.js"></script>
   <script src="dicas.js"></script>
 
 </body>

@@ -32,14 +32,13 @@ function analisarAtaques(dados, stats, nivel) {
     .sort((a, b) => b.forca - a.forca)
 }
 
-// Escolhe 4 ataques fortes e de tipos diferentes, para acertar bem o maior número de tipos
-function sugerirQuatro(ataques) {
-  const candidatos = ataques.filter(a => a.disp.agora)
-  if (candidatos.length === 0) return []
+// Escolhe n ataques fortes e de tipos diferentes, para acertar bem o maior número de tipos
+function escolherAtaques(candidatos, n) {
+  if (candidatos.length === 0 || n <= 0) return []
   const maior = candidatos[0].forca
   const escolhidos = []
   const cobertos = new Set()
-  while (escolhidos.length < 4 && escolhidos.length < candidatos.length) {
+  while (escolhidos.length < n && escolhidos.length < candidatos.length) {
     let melhor = null
     let melhorValor = -Infinity
     candidatos.forEach(function(a) {
@@ -56,6 +55,10 @@ function sugerirQuatro(ataques) {
     TIPOS.forEach(t => { if (efetividade(melhor.tipo, [t]) >= 2) cobertos.add(t) })
   }
   return escolhidos
+}
+
+function sugerirQuatro(ataques) {
+  return escolherAtaques(ataques.filter(a => a.disp.agora && !temCusto(a)), 4)
 }
 
 function cobertura(ataques) {
@@ -104,9 +107,13 @@ function htmlAtaquesAtuais(pokemon, ataques) {
       const posicao = ataques.indexOf(analisado) + 1
       return `<li>${badgeTipo(m.tipo)} <strong>${escaparHtml(m.nome)}</strong> — ${posicao}º ataque mais forte de ${ataques.length}</li>`
     }
+    const util = oficial && ATAQUES_STATUS[oficial.nome]
+    if (util) {
+      return `<li class="estrategia">${badgeTipo(m.tipo)} <strong>${escaparHtml(m.nome)}</strong> — não causa dano, mas é útil na estratégia: ${escaparHtml(util.efeito)}</li>`
+    }
     const motivo = oficial && oficial.poder === null && oficial.categoria !== 'Status'
       ? 'tem poder variável, não entra no cálculo'
-      : 'não causa dano (ataque de status)'
+      : 'não causa dano e quase não ajuda numa batalha 1x1'
     return `<li class="sem-dano">${badgeTipo(m.tipo)} <strong>${escaparHtml(m.nome)}</strong> — ${motivo}</li>`
   })
   const algumDano = pokemon.movimentos.some(m => ataques.some(a => a.nome.toLowerCase() === m.nome.toLowerCase()))
@@ -121,6 +128,227 @@ function htmlAtaquesAtuais(pokemon, ataques) {
       ${alerta}
     </div>
   `
+}
+
+// ---------- Builds recomendadas ----------
+const IVS_PERFEITOS = { hp: 31, ataque: 31, defesa: 31, atqEsp: 31, defEsp: 31, velocidade: 31 }
+const PAPEIS = {
+  forcaFisica: 'Aumentam o Ataque', forcaEspecial: 'Aumentam o Atq. Esp', velocidade: 'Aumentam a Velocidade',
+  cura: 'Recuperam HP', atrapalhar: 'Atrapalham o adversário', protecao: 'Proteção', clima: 'Clima'
+}
+const cacheEspecies = {}
+let contraId = ''
+let nivelSimulacao = 50
+let rodadaBuilds = 0   // evita desenhar um resultado antigo se o usuário trocar de Pokémon no meio
+
+function dadosDaEspecie(nome) {
+  if (!cacheEspecies[nome]) {
+    cacheEspecies[nome] = fetch('/api/especies/' + encodeURIComponent(nome)).then(r => (r.ok ? r.json() : null))
+  }
+  return cacheEspecies[nome]
+}
+
+function pokemonAtual() {
+  return todosPokemons.find(p => p.id === campoQual.value) || null
+}
+
+// O Pokémon recalculado num nível, para comparar os dois no mesmo nível
+function nivelado(p, base, nivel, mudancas = {}) {
+  const evs = mudancas.evs || p.evs
+  const natureza = mudancas.natureza || p.natureza
+  return { ...p, nivel, stats: calcularStats(base, p.ivs, evs, natureza, nivel), movimentos: mudancas.movimentos || p.movimentos }
+}
+
+function testar(meu, dadosMeu, oponente, dadosOponente) {
+  const golpesMeu = analisarGolpes(meu, dadosMeu, oponente)
+  const golpesOp = analisarGolpes(oponente, dadosOponente, meu)
+  const melhorMeu = melhorGolpe(golpesMeu)
+  const melhorOp = melhorGolpe(golpesOp)
+  const sim = simular(meu, melhorMeu, oponente, melhorOp)
+  const pct = n => Math.round(n / SIMULACOES * 100)
+  return { vence: pct(sim.a), perde: pct(sim.b), empate: pct(sim.empate), melhorMeu, melhorOp, meu, oponente }
+}
+
+function htmlTeste(t) {
+  if (!t) return ''
+  const classe = t.vence >= 60 ? 'bom' : t.perde >= 60 ? 'ruim' : 'meio'
+  const golpe = (g, alvo) => g
+    ? (g.min >= alvo.stats.hp
+      ? `${escaparHtml(g.nome)} derruba com um acerto`
+      : `${escaparHtml(g.nome)} tira ${porcentagemHp(g.min, alvo.stats.hp)}–${porcentagemHp(g.max, alvo.stats.hp)} do HP`)
+    : 'nenhum ataque que cause dano'
+  return `
+    <div class="teste ${classe}">
+      <div class="teste-placar"><strong>Vence ${t.vence}%</strong><span>empate ${t.empate}% · perde ${t.perde}%</span></div>
+      <p>Seu melhor golpe: ${golpe(t.melhorMeu, t.oponente)}.</p>
+      <p>Ele usa: ${golpe(t.melhorOp, t.meu)}.</p>
+      <p>${t.meu.stats.velocidade > t.oponente.stats.velocidade ? 'Você ataca primeiro'
+        : t.meu.stats.velocidade < t.oponente.stats.velocidade ? 'Ele ataca primeiro' : 'Mesma Velocidade (sorteio)'}
+        (${t.meu.stats.velocidade} × ${t.oponente.stats.velocidade}).</p>
+    </div>
+  `
+}
+
+function htmlItemAtaque(a, nivel) {
+  const disp = disponibilidade(a, nivel)
+  const detalhe = a.categoria === 'Status'
+    ? escaparHtml(a.efeito)
+    : `${a.categoria} · Poder ${a.poder} · ${a.precisao ?? 100}%${dadosEspecie.tipos.includes(a.tipo) ? ' · <span class="tag-stab">STAB</span>' : ''}`
+  return `
+    <li class="${a.categoria === 'Status' ? 'item-status' : ''}">
+      <div>${badgeTipo(a.tipo)} <strong>${escaparHtml(a.nome)}</strong></div>
+      <small>${detalhe}</small>
+      <small class="como ${disp.agora ? '' : 'bloqueado'}">${escaparHtml(disp.texto)}</small>
+    </li>
+  `
+}
+
+function htmlBuild(build, posicao, ivs, teste, destaque, nivel) {
+  const stats = calcularStats(dadosEspecie.base, ivs, build.evs, build.natureza, nivelSimulacao)
+  const evs = ATRIBUTOS.filter(a => build.evs[a] > 0)
+  const ataques = [...build.ataques, ...build.status]
+  return `
+    <div class="build ${destaque ? 'destaque' : ''}">
+      <div class="build-topo">
+        <span class="build-posicao">${posicao + 1}ª opção${destaque ? ' · 🏆 melhor no teste' : ''}</span>
+        <h4>${build.icone} ${build.titulo}</h4>
+        <small>Foco: ${build.foco}</small>
+      </div>
+      <div class="build-bloco">
+        <span class="rotulo">EVs</span>
+        <div class="chips-evs">${evs.map(a => `<span class="chip-ev ${build.evs[a] >= 128 ? 'forte' : ''}">${build.evs[a]} ${NOMES_ATRIBUTOS[a]}</span>`).join('')}</div>
+      </div>
+      <div class="build-bloco">
+        <span class="rotulo">Natureza</span>
+        <strong>${build.natureza}</strong> <small>(${efeitoNatureza(build.natureza)})</small>
+      </div>
+      <div class="build-bloco">
+        <span class="rotulo">Stats no Nv ${nivelSimulacao}</span>
+        <div class="stats-build">
+          ${ATRIBUTOS.map(a => `<span class="stat-compacto ${marcaNatureza(build.natureza, a)} ${build.evs[a] >= 128 ? 'investido' : ''}"><small>${ABREVIACOES[a]}</small><strong>${stats[a]}</strong></span>`).join('')}
+        </div>
+      </div>
+      <div class="build-bloco">
+        <span class="rotulo">Ataques</span>
+        ${ataques.length ? `<ul class="lista-build">${ataques.map(a => htmlItemAtaque(a, nivel)).join('')}</ul>` : '<p class="vazio-pequeno">Nenhum ataque bom para esta build.</p>'}
+      </div>
+      <details class="por-que">
+        <summary>Por que esta build?</summary>
+        <ul>${build.porQue.map(t => `<li>${escaparHtml(t)}</li>`).join('')}</ul>
+      </details>
+      ${htmlTeste(teste)}
+    </div>
+  `
+}
+
+function htmlStatusUteis() {
+  const lista = statusDaEspecie(dadosEspecie)
+  if (!lista.length) return ''
+  const grupos = {}
+  lista.forEach(a => { (grupos[a.papel] = grupos[a.papel] || []).push(a) })
+  return `
+    <div class="painel">
+      <div class="painel-cabecalho"><h3>🧪 Ataques de status úteis que o ${escaparHtml(dadosEspecie.nome)} aprende</h3></div>
+      <p class="explica-builds">Não causam dano, mas mudam a batalha: deixam você mais forte ou mais rápido, curam, ou enfraquecem o adversário.</p>
+      <div class="grupos-status">
+        ${Object.keys(PAPEIS).filter(p => grupos[p]).map(p => `
+          <div>
+            <h4>${PAPEIS[p]}</h4>
+            <ul>${grupos[p].map(a => `<li><strong>${escaparHtml(a.nome)}</strong> — ${escaparHtml(a.efeito)}</li>`).join('')}</ul>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `
+}
+
+function htmlPainelBuilds(pokemon) {
+  const outros = todosPokemons.filter(p => !pokemon || p.id !== pokemon.id)
+  const grupos = {}
+  outros.forEach(p => { (grupos[p.nome] = grupos[p.nome] || []).push(p) })
+  const opcoes = Object.keys(grupos).sort().map(nome => `
+    <optgroup label="${escaparHtml(nome)}">
+      ${grupos[nome].sort((x, y) => y.pontuacao - x.pontuacao).map(p =>
+        `<option value="${escaparHtml(p.id)}" ${p.id === contraId ? 'selected' : ''}>${escaparHtml(p.nome)} · ${identificacao(p).replace(/<[^>]+>/g, '')}</option>`).join('')}
+    </optgroup>
+  `).join('')
+  const total = ATRIBUTOS.reduce((s, a) => s + dadosEspecie.base[a], 0)
+  return `
+    <div class="painel">
+      <div class="painel-cabecalho"><h3>🏆 Top 3 builds para o ${escaparHtml(dadosEspecie.nome)}</h3></div>
+      <p class="explica-builds">
+        Como treinar este Pokémon para cada estratégia: onde colocar os EVs, qual natureza e quais ataques.
+        A 1ª opção é a que mais combina com os status base da espécie.
+        Escolha um adversário da base para ver qual build ganha dele.
+      </p>
+      ${total < 350 ? `<p class="alerta">Os status base do ${escaparHtml(dadosEspecie.nome)} são baixos (total ${total}).
+        Nenhuma build faz milagre: se ele evolui, vale mais evoluir antes de investir EVs.</p>` : ''}
+      <div class="controles-builds">
+        <label>Testar contra (opcional)
+          <select id="contra">
+            <option value="">Nenhum adversário</option>
+            ${opcoes}
+          </select>
+        </label>
+        <label>Nível do teste
+          <select id="nivel-sim">
+            ${[50, 100].map(n => `<option value="${n}" ${n === nivelSimulacao ? 'selected' : ''}>Nv ${n} (os dois)</option>`).join('')}
+          </select>
+        </label>
+      </div>
+      <div id="builds-lista" class="grade-builds"></div>
+      <div id="builds-atual"></div>
+      <p class="explica">
+        O teste usa a mesma conta da aba Batalha: só ataques que causam dano. Ataques de status (Agility, Will-O-Wisp, Swords Dance...)
+        não entram, então builds com eles costumam ir melhor no jogo do que no teste. Habilidades e itens também não entram.
+        ${pokemon ? `Os stats usam os IVs deste ${escaparHtml(pokemon.nome)}.` : 'Os stats usam IV 31 em tudo.'}
+      </p>
+    </div>
+  `
+}
+
+async function renderizarBuilds() {
+  const lista = document.getElementById('builds-lista')
+  if (!lista || !dadosEspecie) return
+  const rodada = ++rodadaBuilds
+  const especie = dadosEspecie
+  const pokemon = pokemonAtual()
+  const nivel = pokemon ? pokemon.nivel : 100
+  const ivs = pokemon ? pokemon.ivs : IVS_PERFEITOS
+  const builds = gerarBuilds(especie, analisarAtaques(especie, especie.base, nivel), nivel)
+
+  let testes = []
+  let testeAtual = null
+  const oponente = todosPokemons.find(p => p.id === contraId)
+  if (oponente) {
+    lista.innerHTML = '<p class="vazio-pequeno">Testando as builds...</p>'
+    const dadosOp = await dadosDaEspecie(oponente.nome)
+    if (rodada !== rodadaBuilds) return
+    if (dadosOp && dadosOp.base) {
+      const op = nivelado(oponente, dadosOp.base, nivelSimulacao)
+      const molde = pokemon || { nome: especie.nome, tipo1: especie.tipos[0], tipo2: especie.tipos[1] || '', ivs, evs: {}, natureza: '', movimentos: [] }
+      const base = { ...molde, nome: especie.nome, tipo1: especie.tipos[0], tipo2: especie.tipos[1] || '', ivs }
+      testes = builds.map(b => testar(
+        nivelado(base, especie.base, nivelSimulacao, {
+          evs: b.evs, natureza: b.natureza, movimentos: [...b.ataques, ...b.status].map(a => ({ nome: a.nome, tipo: a.tipo }))
+        }), especie, op, dadosOp))
+      if (pokemon) testeAtual = testar(nivelado(pokemon, especie.base, nivelSimulacao), especie, op, dadosOp)
+    }
+  }
+
+  // Destaca a build que mais vence, só se não der empate entre todas
+  const vitorias = testes.map(t => t.vence)
+  const melhor = testes.length && Math.max(...vitorias) > Math.min(...vitorias) ? Math.max(...vitorias) : null
+  lista.innerHTML = builds.map((b, i) =>
+    htmlBuild(b, i, ivs, testes[i], melhor !== null && testes[i].vence === melhor, nivel)).join('')
+
+  document.getElementById('builds-atual').innerHTML = testeAtual ? `
+    <div class="comparar-atual">
+      <h4>E o seu ${escaparHtml(pokemon.nome)} do jeito que está hoje?</h4>
+      <p class="explica-builds">Com os EVs, a natureza (${escaparHtml(pokemon.natureza)}) e os ataques cadastrados, contra o ${escaparHtml(oponente.nome)}, os dois no Nv ${nivelSimulacao}:</p>
+      ${htmlTeste(testeAtual)}
+    </div>
+  ` : ''
 }
 
 function renderizar() {
@@ -161,6 +389,10 @@ function renderizar() {
 
     ${htmlAtaquesAtuais(pokemon, ataques)}
 
+    ${htmlPainelBuilds(pokemon)}
+
+    ${htmlStatusUteis()}
+
     <div class="painel">
       <div class="painel-cabecalho"><h3>⭐ Sugestão de 4 ataques</h3></div>
       ${sugestao.length
@@ -195,6 +427,16 @@ function renderizar() {
         : ''}
     </div>
   `
+
+  document.getElementById('contra').addEventListener('change', function() {
+    contraId = this.value
+    renderizarBuilds()
+  })
+  document.getElementById('nivel-sim').addEventListener('change', function() {
+    nivelSimulacao = Number(this.value)
+    renderizarBuilds()
+  })
+  renderizarBuilds()
 }
 
 // ---------- Escolha do Pokémon ----------
