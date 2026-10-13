@@ -285,15 +285,19 @@
         <p class="dica-ataques">
           O jogo não mostra os IVs? Preencha os <strong>stats</strong> do resumo, o <strong>nível</strong>, a <strong>natureza</strong> e os <strong>EVs</strong>
           (0 se ele nunca foi treinado) e clique no botão: o site faz a conta ao contrário.
-          Nos jogos da Nintendo, o <strong>Juiz</strong> (Judge) da caixa do PC ajuda a acertar o valor.
+          Quanto maior o nível, mais exato fica.
         </p>
+        <label class="tem-juiz">
+          <input type="checkbox" id="tem-juiz">
+          <span>Meu jogo tem o <strong>Juiz</strong> (Sun/Moon, Sword/Shield, Scarlet/Violet), que diz se cada IV é "Best", "Fantastic", "Very Good"...</span>
+        </label>
       </div>
       <div class="campos">
         <div class="campo">
           <label>IV HP</label>
           <input type="number" id="ivHp" min="0" max="31" oninput="atualizarTotalIV()">
           <select id="juizHp" class="juiz-iv" title="O que o Juiz do jogo diz sobre este stat">
-            <option value="">Juiz: não sei</option>
+            <option value="">O Juiz disse...</option>
             <option value="31-31">Best (31)</option>
             <option value="30-30">Fantastic (30)</option>
             <option value="21-29">Very Good (21–29)</option>
@@ -307,7 +311,7 @@
           <label>IV Ataque</label>
           <input type="number" id="ivAtaque" min="0" max="31" oninput="atualizarTotalIV()">
           <select id="juizAtaque" class="juiz-iv" title="O que o Juiz do jogo diz sobre este stat">
-            <option value="">Juiz: não sei</option>
+            <option value="">O Juiz disse...</option>
             <option value="31-31">Best (31)</option>
             <option value="30-30">Fantastic (30)</option>
             <option value="21-29">Very Good (21–29)</option>
@@ -321,7 +325,7 @@
           <label>IV Defesa</label>
           <input type="number" id="ivDefesa" min="0" max="31" oninput="atualizarTotalIV()">
           <select id="juizDefesa" class="juiz-iv" title="O que o Juiz do jogo diz sobre este stat">
-            <option value="">Juiz: não sei</option>
+            <option value="">O Juiz disse...</option>
             <option value="31-31">Best (31)</option>
             <option value="30-30">Fantastic (30)</option>
             <option value="21-29">Very Good (21–29)</option>
@@ -335,7 +339,7 @@
           <label>IV Atq. Esp</label>
           <input type="number" id="ivAtqEsp" min="0" max="31" oninput="atualizarTotalIV()">
           <select id="juizAtqEsp" class="juiz-iv" title="O que o Juiz do jogo diz sobre este stat">
-            <option value="">Juiz: não sei</option>
+            <option value="">O Juiz disse...</option>
             <option value="31-31">Best (31)</option>
             <option value="30-30">Fantastic (30)</option>
             <option value="21-29">Very Good (21–29)</option>
@@ -349,7 +353,7 @@
           <label>IV Def. Esp</label>
           <input type="number" id="ivDefEsp" min="0" max="31" oninput="atualizarTotalIV()">
           <select id="juizDefEsp" class="juiz-iv" title="O que o Juiz do jogo diz sobre este stat">
-            <option value="">Juiz: não sei</option>
+            <option value="">O Juiz disse...</option>
             <option value="31-31">Best (31)</option>
             <option value="30-30">Fantastic (30)</option>
             <option value="21-29">Very Good (21–29)</option>
@@ -363,7 +367,7 @@
           <label>IV Velocidade</label>
           <input type="number" id="ivVelocidade" min="0" max="31" oninput="atualizarTotalIV()">
           <select id="juizVelocidade" class="juiz-iv" title="O que o Juiz do jogo diz sobre este stat">
-            <option value="">Juiz: não sei</option>
+            <option value="">O Juiz disse...</option>
             <option value="31-31">Best (31)</option>
             <option value="30-30">Fantastic (30)</option>
             <option value="21-29">Very Good (21–29)</option>

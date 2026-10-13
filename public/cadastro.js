@@ -185,9 +185,16 @@ let infoNick = null  // { temPin, temInicial } do treinador logado
 
 // O jogo fica escolhido para os próximos cadastros
 const campoPlataforma = document.getElementById('plataforma')
+// O Juiz só existe nos jogos novos da Nintendo: a opção aparece no Nintendo, e os campos só se a pessoa marcar
+const caixaJuiz = document.getElementById('tem-juiz')
 function mostrarJuiz() {
-  document.getElementById('secao-ivs').classList.toggle('com-juiz', campoPlataforma.value === 'Nintendo')
+  const secao = document.getElementById('secao-ivs')
+  const nintendo = campoPlataforma.value === 'Nintendo'
+  secao.classList.toggle('nintendo', nintendo)
+  secao.classList.toggle('com-juiz', nintendo && caixaJuiz.checked)
+  if (!secao.classList.contains('com-juiz')) document.querySelectorAll('.juiz-iv').forEach(s => { s.value = '' })
 }
+caixaJuiz.addEventListener('change', mostrarJuiz)
 campoPlataforma.value = plataformaSalva()
 mostrarJuiz()
 campoPlataforma.addEventListener('change', function() {
@@ -634,7 +641,7 @@ if (idEdicao) iniciarEdicao()
 function limparFormulario() {
   document.querySelectorAll('.formulario-container input, .formulario-container select').forEach(function(campo) {
     // O nick continua: normalmente se cadastra vários Pokémon em sequência
-    if (campo.id === 'treinador' || campo.id === 'pin' || campo.id === 'inicial' || campo.id === 'plataforma') return
+    if (campo.id === 'treinador' || campo.id === 'pin' || campo.id === 'inicial' || campo.id === 'plataforma' || campo.id === 'tem-juiz') return
     if (campo.type === 'checkbox' || campo.type === 'radio') {
       campo.checked = false
       return

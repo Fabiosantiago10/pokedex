@@ -330,3 +330,25 @@ main.formulario-container {
 .faixa-iv.erro {
   color: #cc0000;
 }
+
+.tem-juiz {
+  display: none;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+}
+
+.nintendo .tem-juiz {
+  display: flex;
+}
+
+.tem-juiz input {
+  margin-top: 2px;
+}
+
+.descobrir-ivs .btn-calcular {
+  margin-bottom: 8px;
+}
