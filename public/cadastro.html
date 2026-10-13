@@ -68,15 +68,53 @@
           <small class="status-pin">Só é comparado e batalha com Pokémon do mesmo jogo.</small>
         </div>
         <div class="campo" id="campo-geracao" hidden>
-          <label>Geração do jogo</label>
-          <select id="geracaoJogo">
+          <label>Qual jogo?</label>
+          <select id="jogoNintendo">
             <option value="">Selecione...</option>
-            <option value="3">3ª geração (FireRed, LeafGreen, Ruby, Sapphire, Emerald)</option>
-            <option value="4">4ª geração (Diamond, Pearl, Platinum, HeartGold, SoulSilver)</option>
-            <option value="5">5ª geração (Black, White, Black 2, White 2)</option>
-            <option value="6">6ª geração ou mais nova (X/Y, Sun/Moon, Switch...)</option>
+            <optgroup label="3ª geração (x1 com o PokeMMO)">
+              <option value="ruby">Ruby</option>
+              <option value="sapphire">Sapphire</option>
+              <option value="emerald">Emerald</option>
+              <option value="firered">FireRed</option>
+              <option value="leafgreen">LeafGreen</option>
+            </optgroup>
+            <optgroup label="4ª geração (x1 com o PokeMMO)">
+              <option value="diamond">Diamond</option>
+              <option value="pearl">Pearl</option>
+              <option value="platinum">Platinum</option>
+              <option value="heartgold">HeartGold</option>
+              <option value="soulsilver">SoulSilver</option>
+            </optgroup>
+            <optgroup label="5ª geração (x1 com o PokeMMO)">
+              <option value="black">Black</option>
+              <option value="white">White</option>
+              <option value="black2">Black 2</option>
+              <option value="white2">White 2</option>
+            </optgroup>
+            <optgroup label="6ª geração">
+              <option value="x">X</option>
+              <option value="y">Y</option>
+              <option value="omegaruby">Omega Ruby</option>
+              <option value="alphasapphire">Alpha Sapphire</option>
+            </optgroup>
+            <optgroup label="7ª geração">
+              <option value="sun">Sun</option>
+              <option value="moon">Moon</option>
+              <option value="ultrasun">Ultra Sun</option>
+              <option value="ultramoon">Ultra Moon</option>
+            </optgroup>
+            <optgroup label="8ª geração">
+              <option value="sword">Sword</option>
+              <option value="shield">Shield</option>
+              <option value="brilliantdiamond">Brilliant Diamond</option>
+              <option value="shiningpearl">Shining Pearl</option>
+            </optgroup>
+            <optgroup label="9ª geração">
+              <option value="scarlet">Scarlet</option>
+              <option value="violet">Violet</option>
+            </optgroup>
           </select>
-          <small class="status-pin">Até a 5ª geração, ele pode fazer x1 com Pokémon do PokeMMO.</small>
+          <small class="status-pin" id="info-jogo">Até a 5ª geração, ele pode fazer x1 com Pokémon do PokeMMO.</small>
         </div>
         <div class="campo">
           <label>Número na Pokédex</label>

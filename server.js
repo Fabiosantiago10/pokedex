@@ -4,7 +4,7 @@ const path = require('path')
 const crypto = require('crypto')
 const db = require('./db')
 const pokeapi = require('./pokeapi')
-const { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, GERACOES_NINTENDO, podeX1EntreJogos, statsQueNaoBatem } = require('./public/comum.js')
+const { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem } = require('./public/comum.js')
 
 const app = express()
 
@@ -188,7 +188,9 @@ async function validarPokemon(corpo) {
     tipo1: texto(corpo.tipo1, 15),
     tipo2: texto(corpo.tipo2, 15) || null,
     plataforma: texto(corpo.plataforma, 20),
-    geracaoJogo: corpo.plataforma === 'Nintendo' ? numero(corpo.geracaoJogo) : null,
+    // Nos jogos oficiais guarda o jogo; a geração sai dele
+    jogoNintendo: corpo.plataforma === 'Nintendo' && JOGOS_NINTENDO[corpo.jogoNintendo] ? corpo.jogoNintendo : null,
+    geracaoJogo: corpo.plataforma === 'Nintendo' && JOGOS_NINTENDO[corpo.jogoNintendo] ? JOGOS_NINTENDO[corpo.jogoNintendo].geracao : null,
     natureza: texto(corpo.natureza, 20),
     habilidade: texto(corpo.habilidade),
     // Para reconhecer o Pokémon no jogo (vários da mesma espécie parecem iguais no PC)
@@ -220,7 +222,7 @@ async function validarPokemon(corpo) {
 
   if (!pokemon.treinador) erros.push('Informe o seu nick do jogo')
   if (!PLATAFORMAS[pokemon.plataforma]) erros.push('Escolha de qual jogo é o Pokémon (PokeMMO, Pixelmon ou jogos oficiais)')
-  if (pokemon.plataforma === 'Nintendo' && !GERACOES_NINTENDO[pokemon.geracaoJogo]) erros.push('Escolha a geração do jogo (ex: FireRed é 3ª geração)')
+  if (pokemon.plataforma === 'Nintendo' && !pokemon.jogoNintendo) erros.push('Escolha qual jogo da Nintendo (ex: FireRed)')
   if (!pokemon.nome) erros.push('Informe o nome do Pokémon')
   if (soma(pokemon.evs) > 510) erros.push('O total de EVs não pode passar de 510')
   if (pokemon.nivel < 1 || pokemon.nivel > 100) erros.push('O nível deve estar entre 1 e 100')
@@ -228,6 +230,11 @@ async function validarPokemon(corpo) {
   if (pokemon.natureza && !NOMES_NATUREZAS.includes(pokemon.natureza)) erros.push(`A natureza "${pokemon.natureza}" não existe`)
 
   if (pokemon.nome) erros.push(...await conferirComDadosOficiais(pokemon))
+  // O Pokémon tem que existir no jogo escolhido (ex: FireRed só vai até o #386)
+  const ultimo = pokemon.geracaoJogo && ULTIMO_NUMERO_GERACAO[pokemon.geracaoJogo]
+  if (ultimo && parseInt(pokemon.numero, 10) > ultimo) {
+    erros.push(`${pokemon.nome} (#${pokemon.numero}) não existe no ${JOGOS_NINTENDO[pokemon.jogoNintendo].nome}: ele só tem até o #${String(ultimo).padStart(3, '0')}`)
+  }
   return { pokemon, erros }
 }
 
@@ -340,8 +347,8 @@ async function validarEdicao(original, novo) {
   const plataforma = plataformaDe(original)
 
   if (novo.plataforma !== plataforma) erros.push('O jogo não pode mudar depois do cadastro')
-  // Quem cadastrou antes do campo existir pode informar a geração uma vez; depois ela não muda
-  if (original.geracaoJogo && novo.geracaoJogo !== original.geracaoJogo) erros.push('A geração do jogo não pode mudar depois do cadastro')
+  // Quem cadastrou antes do campo existir pode informar o jogo uma vez; depois ele não muda
+  if (original.jogoNintendo && novo.jogoNintendo !== original.jogoNintendo) erros.push('O jogo não pode mudar depois do cadastro')
   if (novo.nivel < original.nivel) erros.push(`O nível não pode diminuir (estava no Nv ${original.nivel})`)
   if (novo.natureza !== original.natureza) erros.push(`A natureza não muda no jogo (é ${original.natureza || 'neutra'})`)
   if (novo.sexo !== (original.sexo || '')) erros.push('O sexo não muda no jogo')

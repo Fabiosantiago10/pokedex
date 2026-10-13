@@ -50,15 +50,30 @@ function plataformaDe(p) {
 
 function seloPlataforma(p) {
   const plat = PLATAFORMAS[plataformaDe(p)]
-  return `<span class="selo selo-plataforma" title="${plat.nome}">${plat.icone} ${plat.curto}</span>`
+  return `<span class="selo selo-plataforma" title="${plat.nome}">${plat.icone} ${nomeDoJogo(p)}</span>`
 }
 
-// Geração do jogo, para quem joga os jogos oficiais: decide se o Pokémon pode lutar com os do PokeMMO
-const GERACOES_NINTENDO = {
-  3: '3ª geração (FireRed, LeafGreen, Ruby, Sapphire, Emerald)',
-  4: '4ª geração (Diamond, Pearl, Platinum, HeartGold, SoulSilver)',
-  5: '5ª geração (Black, White, Black 2, White 2)',
-  6: '6ª geração ou mais nova (X/Y, Sun/Moon, Switch...)'
+// Jogos oficiais: o jogo diz a geração (as regras de batalha) e até qual número da Pokédex existe nele.
+// Let's Go e Legends Arceus ficam de fora: não usam EVs.
+const JOGOS_NINTENDO = {
+  ruby: { nome: 'Ruby', geracao: 3 }, sapphire: { nome: 'Sapphire', geracao: 3 }, emerald: { nome: 'Emerald', geracao: 3 },
+  firered: { nome: 'FireRed', geracao: 3 }, leafgreen: { nome: 'LeafGreen', geracao: 3 },
+  diamond: { nome: 'Diamond', geracao: 4 }, pearl: { nome: 'Pearl', geracao: 4 }, platinum: { nome: 'Platinum', geracao: 4 },
+  heartgold: { nome: 'HeartGold', geracao: 4 }, soulsilver: { nome: 'SoulSilver', geracao: 4 },
+  black: { nome: 'Black', geracao: 5 }, white: { nome: 'White', geracao: 5 }, black2: { nome: 'Black 2', geracao: 5 }, white2: { nome: 'White 2', geracao: 5 },
+  x: { nome: 'X', geracao: 6 }, y: { nome: 'Y', geracao: 6 }, omegaruby: { nome: 'Omega Ruby', geracao: 6 }, alphasapphire: { nome: 'Alpha Sapphire', geracao: 6 },
+  sun: { nome: 'Sun', geracao: 7 }, moon: { nome: 'Moon', geracao: 7 }, ultrasun: { nome: 'Ultra Sun', geracao: 7 }, ultramoon: { nome: 'Ultra Moon', geracao: 7 },
+  sword: { nome: 'Sword', geracao: 8 }, shield: { nome: 'Shield', geracao: 8 }, brilliantdiamond: { nome: 'Brilliant Diamond', geracao: 8 }, shiningpearl: { nome: 'Shining Pearl', geracao: 8 },
+  scarlet: { nome: 'Scarlet', geracao: 9 }, violet: { nome: 'Violet', geracao: 9 }
+}
+
+// Último número da Pokédex que existe em cada geração
+const ULTIMO_NUMERO_GERACAO = { 3: 386, 4: 493, 5: 649, 6: 721, 7: 809, 8: 905, 9: 1025 }
+
+// Nome do jogo para mostrar: "FireRed", "PokeMMO", "Pixelmon"...
+function nomeDoJogo(p) {
+  const jogo = plataformaDe(p) === 'Nintendo' && JOGOS_NINTENDO[p.jogoNintendo]
+  return jogo ? jogo.nome : PLATAFORMAS[plataformaDe(p)].curto
 }
 
 // x1 entre jogos: só Pokémon que existem no PokeMMO (#001 a #649, até a 5ª geração),
@@ -288,5 +303,5 @@ function salvarTreinador(nick) {
 
 // O servidor (Node) usa a mesma fórmula de stats, para a nota bater com o que aparece na tela
 if (typeof module !== 'undefined') {
-  module.exports = { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, GERACOES_NINTENDO, podeX1EntreJogos, statsQueNaoBatem }
+  module.exports = { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem }
 }

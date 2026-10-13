@@ -105,18 +105,18 @@ async function atualizar() {
     if (problemas.length) {
       resultado.innerHTML = `<div class="aviso-entre-jogos bloqueado">
         🚫 <strong>Esta batalha entre jogos foi bloqueada.</strong>
-        ${problemas.map(x => `O ${escaparHtml(x.p.nome)} do ${PLATAFORMAS[plataformaDe(x.p)].curto} tem stats que não batem com a fórmula
+        ${problemas.map(x => `O ${escaparHtml(x.p.nome)} do ${nomeDoJogo(x.p)} tem stats que não batem com a fórmula
           (${x.stats.map(s => NOMES_ATRIBUTOS[s]).join(', ')}).`).join(' ')}
         Pode ser erro no cadastro ou status base diferentes naquele jogo; nos dois casos a comparação não seria justa.
       </div>`
       return
     }
-    const semGeracao = todosPokemons.filter(p => plataformaDe(p) === 'Nintendo' && !p.geracaoJogo).length
+    const semGeracao = todosPokemons.filter(p => plataformaDe(p) === 'Nintendo' && !p.jogoNintendo).length
     avisoEntreJogos = `<div class="aviso-entre-jogos">
-      🔀 <strong>Batalha entre jogos</strong> (${PLATAFORMAS[plataformaDe(a)].curto} x ${PLATAFORMAS[plataformaDe(b)].curto}), com as regras do <strong>PokeMMO</strong>:
+      🔀 <strong>Batalha entre jogos</strong> (${nomeDoJogo(a)} x ${nomeDoJogo(b)}), com as regras do <strong>PokeMMO</strong>:
       físico ou especial depende de cada ataque. No FireRed seria pelo tipo do ataque, então o resultado lá pode ser outro.
       É uma comparação para diversão: o ranking continua separado por jogo.
-      ${semGeracao ? `<br><small>${semGeracao} Pokémon dos jogos oficiais ficaram de fora porque estão sem a <strong>geração do jogo</strong>.
+      ${semGeracao ? `<br><small>${semGeracao} Pokémon dos jogos oficiais ficaram de fora porque o dono ainda não informou <strong>qual jogo</strong>.
         O dono informa em Meus Pokémon → Editar.</small>` : ''}
     </div>`
   }
@@ -130,7 +130,7 @@ async function atualizar() {
   const pct = n => Math.round(n / SIMULACOES * 100)
   // Nomes de cada lado: com a mesma espécie dos dois lados, diz de qual jogo (ou qual lado) é cada um
   const mesmaEspecie = a.nome === b.nome
-  const nomeLado = (p, n) => escaparHtml(p.nome) + (!mesmaEspecie ? '' : plataformaDe(a) !== plataformaDe(b) ? ' do ' + PLATAFORMAS[plataformaDe(p)].curto : ' (Pokémon ' + n + ')')
+  const nomeLado = (p, n) => escaparHtml(p.nome) + (!mesmaEspecie ? '' : plataformaDe(a) !== plataformaDe(b) ? ' do ' + nomeDoJogo(p) : ' (Pokémon ' + n + ')')
   const nomeA = nomeLado(a, 1)
   const nomeB = nomeLado(b, 2)
   const velA = a.stats.velocidade
@@ -201,7 +201,7 @@ async function atualizar() {
 
 // ---------- Escolha dos Pokémon ----------
 function rotulo(p) {
-  const jogo = plataformaAtual === ENTRE_JOGOS ? PLATAFORMAS[plataformaDe(p)].icone + ' ' + PLATAFORMAS[plataformaDe(p)].curto + ' · ' : ''
+  const jogo = plataformaAtual === ENTRE_JOGOS ? PLATAFORMAS[plataformaDe(p)].icone + ' ' + nomeDoJogo(p) + ' · ' : ''
   return `${jogo}${p.nome} · ${identificacao(p).replace(/<[^>]+>/g, '')} · IVs ${soma(p.ivs)}/186`
 }
 
