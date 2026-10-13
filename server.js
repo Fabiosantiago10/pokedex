@@ -538,6 +538,7 @@ app.post('/api/pokemons', async function(req, res) {
 
   pokemons.push(pokemon)
   await db.salvarPokemon(pokemon)
+  statusX1 = null  // a base mudou: o x1 entre jogos é conferido de novo
 
   const ranking = rankingDaEspecie(pokemon.nome, pokemon.plataforma)
   res.status(201).json({
@@ -634,6 +635,7 @@ app.put('/api/pokemons/:id', async function(req, res) {
 
   pokemons[indice] = pokemon
   await db.salvarPokemon(pokemon)
+  statusX1 = null  // a base mudou: o x1 entre jogos é conferido de novo
 
   const ranking = rankingDaEspecie(pokemon.nome, pokemon.plataforma)
   res.json({
