@@ -435,3 +435,8 @@ main.formulario-container {
   color: #888;
   cursor: not-allowed;
 }
+
+.status-pin.erro-geracao {
+  color: #b00000;
+  font-weight: 600;
+}

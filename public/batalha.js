@@ -100,7 +100,7 @@ async function atualizar() {
   let avisoEntreJogos = ''
   if (plataformaAtual === ENTRE_JOGOS) {
     const problemas = [[a, dadosA], [b, dadosB]]
-      .map(([p, d]) => ({ p, stats: statsQueNaoBatem(p, d && d.base) }))
+      .map(([p, d]) => ({ p, stats: statsQueNaoBatem(p, baseDoPokemon(p, d)) }))
       .filter(x => x.stats.length)
     if (problemas.length) {
       resultado.innerHTML = `<div class="aviso-entre-jogos bloqueado">
@@ -116,7 +116,7 @@ async function atualizar() {
       🔀 <strong>Batalha entre jogos</strong> (${nomeDoJogo(a)} x ${nomeDoJogo(b)}), com as regras do <strong>PokeMMO</strong>:
       físico ou especial depende de cada ataque. No FireRed seria pelo tipo do ataque, então o resultado lá pode ser outro.
       É uma comparação para diversão: o ranking continua separado por jogo.
-      ${semGeracao ? `<br><small>${semGeracao} Pokémon dos jogos oficiais ficaram de fora porque o dono ainda não informou <strong>qual jogo</strong>.
+      ${semGeracao ? `<br><small>${semGeracao} Pokémon de emulador ficaram de fora porque o dono ainda não informou <strong>qual jogo</strong>.
         O dono informa em Meus Pokémon → Editar.</small>` : ''}
     </div>`
   }
@@ -206,7 +206,7 @@ function rotulo(p) {
 }
 
 // ---------- Jogo: só batalham Pokémon do mesmo jogo ----------
-// Exceção: "Entre jogos" junta PokeMMO e jogos oficiais até a 5ª geração (#001 a #649)
+// Exceção: "Entre jogos" junta PokeMMO e emuladores com jogo até a 5ª geração (#001 a #649)
 const ENTRE_JOGOS = 'entre'
 let plataformaAtual = plataformaSalva()
 let statusX1 = { ativo: false, motivo: 'Carregando...' }
@@ -223,7 +223,7 @@ function renderizarFiltroPlataforma() {
       ${plat.icone} ${plat.nome} <span>${total}</span>
     </button>`
   }).join('') + `<button type="button" role="tab" class="chip-plataforma ${plataformaAtual === ENTRE_JOGOS ? 'ativo' : ''} ${statusX1.ativo ? '' : 'desligado'}"
-      data-plataforma="${ENTRE_JOGOS}" aria-selected="${plataformaAtual === ENTRE_JOGOS}" title="PokeMMO x jogos oficiais até a 5ª geração">
+      data-plataforma="${ENTRE_JOGOS}" aria-selected="${plataformaAtual === ENTRE_JOGOS}" title="PokeMMO x emulador com jogo até a 5ª geração">
       🔀 Entre jogos <span>${todosPokemons.filter(podeX1EntreJogos).length}</span>
     </button>`
 }
@@ -244,7 +244,7 @@ function trocarJogo(idA, idB) {
     selB.innerHTML = ''
     document.getElementById('resultado').innerHTML = ''
     statusEl.textContent = plataformaAtual === ENTRE_JOGOS
-      ? 'É preciso ter pelo menos 2 Pokémon que podem lutar entre jogos (PokeMMO ou jogos oficiais até a 5ª geração, #001 a #649).'
+      ? 'É preciso ter pelo menos 2 Pokémon que podem lutar entre jogos (PokeMMO ou emulador com jogo até a 5ª geração, #001 a #649).'
       : `É preciso ter pelo menos 2 Pokémon do ${PLATAFORMAS[plataformaAtual].nome} na base para simular uma batalha.`
     return
   }

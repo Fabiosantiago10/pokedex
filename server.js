@@ -4,7 +4,7 @@ const path = require('path')
 const crypto = require('crypto')
 const db = require('./db')
 const pokeapi = require('./pokeapi')
-const { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem } = require('./public/comum.js')
+const { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem, baseDoPokemon } = require('./public/comum.js')
 
 const app = express()
 
@@ -129,18 +129,19 @@ function calcularPontuacao(pokemon, base) {
   return Math.round(pontuacaoIV + pontuacaoStats)
 }
 
-async function statsBase(nome) {
+// Status base do Pokémon no jogo dele (ex: no FireRed o Pidgeot tem Velocidade 91, não 101)
+async function statsBaseDe(pokemon) {
   try {
-    const dados = await pokeapi.dadosDoPokemon(nome)
-    return dados ? dados.base : null
+    const dados = await pokeapi.dadosDoPokemon(pokemon.nome)
+    return dados ? baseDoPokemon(pokemon, dados) : null
   } catch (erro) {
-    console.error('Sem stats base para ' + nome + ':', erro.message)
+    console.error('Sem stats base para ' + pokemon.nome + ':', erro.message)
     return null
   }
 }
 
 async function pontuar(pokemon) {
-  return calcularPontuacao(pokemon, await statsBase(pokemon.nome))
+  return calcularPontuacao(pokemon, await statsBaseDe(pokemon))
 }
 
 // Pokémon cadastrados antes do campo "jogo" existir eram todos do PokeMMO
@@ -221,8 +222,8 @@ async function validarPokemon(corpo) {
   })
 
   if (!pokemon.treinador) erros.push('Informe o seu nick do jogo')
-  if (!PLATAFORMAS[pokemon.plataforma]) erros.push('Escolha de qual jogo é o Pokémon (PokeMMO, Pixelmon ou jogos oficiais)')
-  if (pokemon.plataforma === 'Nintendo' && !pokemon.jogoNintendo) erros.push('Escolha qual jogo da Nintendo (ex: FireRed)')
+  if (!PLATAFORMAS[pokemon.plataforma]) erros.push('Escolha de qual jogo é o Pokémon (PokeMMO, Pixelmon ou emulador)')
+  if (pokemon.plataforma === 'Nintendo' && !pokemon.jogoNintendo) erros.push('Escolha qual jogo você joga no emulador (ex: FireRed)')
   if (!pokemon.nome) erros.push('Informe o nome do Pokémon')
   if (soma(pokemon.evs) > 510) erros.push('O total de EVs não pode passar de 510')
   if (pokemon.nivel < 1 || pokemon.nivel > 100) erros.push('O nível deve estar entre 1 e 100')
@@ -384,7 +385,7 @@ async function validarEdicao(original, novo) {
     const versoes = [...(original.historico || []), original, novo]
     for (const a of ivsMudaram.filter(a => !(novo.ivs[a] === 31 && novo.nivel >= 50))) {
       for (const v of versoes) {
-        const base = await statsBase(v.nome)
+        const base = await statsBaseDe({ ...v, plataforma: novo.plataforma, geracaoJogo: novo.geracaoJogo })
         if (!base) continue
         let fecha = false
         for (let ev = 0; ev <= 252 && !fecha; ev++) {
@@ -415,7 +416,7 @@ async function calcularStatusX1() {
   const elegiveis = pokemons.filter(podeX1EntreJogos)
   let batem = 0
   for (const p of elegiveis) {
-    if (statsQueNaoBatem(p, await statsBase(p.nome)).length === 0) batem++
+    if (statsQueNaoBatem(p, await statsBaseDe(p)).length === 0) batem++
   }
   const proporcao = elegiveis.length ? batem / elegiveis.length : 1
   const resumo = { elegiveis: elegiveis.length, batem, proporcao: Math.round(proporcao * 100) }

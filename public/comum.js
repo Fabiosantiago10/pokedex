@@ -40,7 +40,8 @@ function selosVariante(p) {
 const PLATAFORMAS = {
   PokeMMO:  { nome: 'PokeMMO', curto: 'PokeMMO', icone: '🎮' },
   Pixelmon: { nome: 'Pixelmon (Minecraft)', curto: 'Pixelmon', icone: '⛏️' },
-  Nintendo: { nome: 'Jogos oficiais (Nintendo)', curto: 'Nintendo', icone: '🕹️' }
+  // O id continua 'Nintendo' (cadastros antigos); na tela aparece como Emulador
+  Nintendo: { nome: 'Emulador', curto: 'Emulador', icone: '🕹️' }
 }
 
 // Pokémon cadastrados antes do campo existir são todos do PokeMMO
@@ -69,6 +70,31 @@ const JOGOS_NINTENDO = {
 
 // Último número da Pokédex que existe em cada geração
 const ULTIMO_NUMERO_GERACAO = { 3: 386, 4: 493, 5: 649, 6: 721, 7: 809, 8: 905, 9: 1025 }
+
+// Status base da espécie num jogo de certa geração. Sem geração (PokeMMO, Pixelmon), usa os atuais:
+// o PokeMMO usa os status base novos (ex: Pidgeot com Velocidade 101), conferido com Pokémon da base.
+function baseNaGeracao(dados, geracao) {
+  if (!dados || !dados.base) return null
+  const base = { ...dados.base }
+  if (!geracao) return base
+  // Do mais novo para o mais antigo: o valor antigo mais próximo da geração escolhida fica por último
+  ;[...(dados.basesAntigas || [])]
+    .sort((a, b) => b.ate - a.ate)
+    .filter(antigo => antigo.ate >= geracao)
+    .forEach(antigo => Object.assign(base, antigo.stats))
+  return base
+}
+
+function baseDoPokemon(p, dados) {
+  return baseNaGeracao(dados, plataformaDe(p) === 'Nintendo' ? Number(p.geracaoJogo) || null : null)
+}
+
+// Com quais gerações os stats batem? Só dá para saber nas espécies que tiveram status base mudados.
+// Devolve null quando a espécie nunca mudou (os stats não dizem nada sobre o jogo).
+function geracoesQueBatem(p, dados) {
+  if (!dados || !(dados.basesAntigas || []).length) return null
+  return [3, 4, 5, 6, 7, 8, 9].filter(g => statsQueNaoBatem({ ...p, plataforma: 'Nintendo' }, baseNaGeracao(dados, g)).length === 0)
+}
 
 // Nome do jogo para mostrar: "FireRed", "PokeMMO", "Pixelmon"...
 function nomeDoJogo(p) {
@@ -303,5 +329,5 @@ function salvarTreinador(nick) {
 
 // O servidor (Node) usa a mesma fórmula de stats, para a nota bater com o que aparece na tela
 if (typeof module !== 'undefined') {
-  module.exports = { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem }
+  module.exports = { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem, baseNaGeracao, baseDoPokemon }
 }

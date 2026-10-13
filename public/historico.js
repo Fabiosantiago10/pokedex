@@ -134,7 +134,7 @@ async function renderizar(pokemon) {
         ${cabecalho(depois, i === versoes.length - 1 ? 'Agora' : 'Save ' + (i + 1))}
         ${htmlMudancas(antes, depois) || '<p class="explica-pequena">Nada mudou além dos números abaixo.</p>'}
         ${htmlTabelaStats(antes, depois)}
-        ${dados && dados.base ? htmlAnaliseEvs(estimarEvsGanhos(antes, depois, dados.base)) : ''}
+        ${dados && dados.base ? htmlAnaliseEvs(estimarEvsGanhos(antes, depois, baseDoPokemon(pokemon, dados))) : ''}
       </div>
     `)
   }
