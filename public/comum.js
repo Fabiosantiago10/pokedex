@@ -53,6 +53,42 @@ function seloPlataforma(p) {
   return `<span class="selo selo-plataforma" title="${plat.nome}">${plat.icone} ${plat.curto}</span>`
 }
 
+// Geração do jogo, para quem joga os jogos oficiais: decide se o Pokémon pode lutar com os do PokeMMO
+const GERACOES_NINTENDO = {
+  3: '3ª geração (FireRed, LeafGreen, Ruby, Sapphire, Emerald)',
+  4: '4ª geração (Diamond, Pearl, Platinum, HeartGold, SoulSilver)',
+  5: '5ª geração (Black, White, Black 2, White 2)',
+  6: '6ª geração ou mais nova (X/Y, Sun/Moon, Switch...)'
+}
+
+// x1 entre jogos: só Pokémon que existem no PokeMMO (#001 a #649, até a 5ª geração),
+// do PokeMMO ou de um jogo oficial até a 5ª geração
+const ULTIMO_NUMERO_X1 = 649
+
+function podeX1EntreJogos(p) {
+  const numero = parseInt(p.numero, 10)
+  if (!(numero >= 1 && numero <= ULTIMO_NUMERO_X1)) return false
+  const plataforma = plataformaDe(p)
+  const geracao = Number(p.geracaoJogo)
+  return plataforma === 'PokeMMO' || (plataforma === 'Nintendo' && geracao >= 3 && geracao <= 5)
+}
+
+// Stats que não batem com a fórmula. No PokeMMO os IVs aparecem no jogo, então a conta tem que ser exata;
+// nos outros jogos os IVs podem ser estimativa, então basta existir algum IV (0 a 31) que feche a conta.
+// Quando não batem, o jogo pode ter status base diferentes: aí a batalha entre jogos não é justa.
+function statsQueNaoBatem(p, base) {
+  if (!base) return []
+  return ATRIBUTOS.filter(function(a) {
+    if (plataformaDe(p) === 'PokeMMO') {
+      return calcularStats(base, p.ivs, p.evs, p.natureza, p.nivel)[a] !== p.stats[a]
+    }
+    for (let iv = 0; iv <= 31; iv++) {
+      if (calcularStats(base, { [a]: iv }, { [a]: (p.evs && p.evs[a]) || 0 }, p.natureza, p.nivel)[a] === p.stats[a]) return false
+    }
+    return true
+  })
+}
+
 // Preferência de jogo (filtros da Pokédex e da Batalha, e o campo do cadastro)
 function plataformaSalva() {
   try {
@@ -252,5 +288,5 @@ function salvarTreinador(nick) {
 
 // O servidor (Node) usa a mesma fórmula de stats, para a nota bater com o que aparece na tela
 if (typeof module !== 'undefined') {
-  module.exports = { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe }
+  module.exports = { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, GERACOES_NINTENDO, podeX1EntreJogos, statsQueNaoBatem }
 }

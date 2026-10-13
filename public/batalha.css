@@ -343,3 +343,22 @@
   .placar-pct { font-size: 30px; }
   .stats-lado { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ---------- x1 entre jogos ---------- */
+.aviso-entre-jogos {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #eef2ff;
+  border: 1px solid #c3cbf5;
+  font-size: 14px;
+}
+
+.aviso-entre-jogos.bloqueado {
+  background: #fde8e8;
+  border-color: #f2a0a0;
+}
+
+.chip-plataforma.desligado {
+  opacity: 0.55;
+}

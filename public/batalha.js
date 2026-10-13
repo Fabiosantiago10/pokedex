@@ -96,6 +96,28 @@ async function atualizar() {
   const [dadosA, dadosB] = await Promise.all([dadosDaEspecie(a.nome), dadosDaEspecie(b.nome)])
   statusEl.textContent = ''
 
+  // Entre jogos: só simula se os stats dos dois batem com a fórmula (senão o jogo deles tem dados diferentes)
+  let avisoEntreJogos = ''
+  if (plataformaAtual === ENTRE_JOGOS) {
+    const problemas = [[a, dadosA], [b, dadosB]]
+      .map(([p, d]) => ({ p, stats: statsQueNaoBatem(p, d && d.base) }))
+      .filter(x => x.stats.length)
+    if (problemas.length) {
+      resultado.innerHTML = `<div class="aviso-entre-jogos bloqueado">
+        🚫 <strong>Esta batalha entre jogos foi bloqueada.</strong>
+        ${problemas.map(x => `O ${escaparHtml(x.p.nome)} do ${PLATAFORMAS[plataformaDe(x.p)].curto} tem stats que não batem com a fórmula
+          (${x.stats.map(s => NOMES_ATRIBUTOS[s]).join(', ')}).`).join(' ')}
+        Pode ser erro no cadastro ou status base diferentes naquele jogo; nos dois casos a comparação não seria justa.
+      </div>`
+      return
+    }
+    avisoEntreJogos = `<div class="aviso-entre-jogos">
+      🔀 <strong>Batalha entre jogos</strong> (${PLATAFORMAS[plataformaDe(a)].curto} x ${PLATAFORMAS[plataformaDe(b)].curto}), com as regras do <strong>PokeMMO</strong>:
+      físico ou especial depende de cada ataque. No FireRed seria pelo tipo do ataque, então o resultado lá pode ser outro.
+      É uma comparação para diversão: o ranking continua separado por jogo.
+    </div>`
+  }
+
   const golpesA = analisarGolpes(a, dadosA, b)
   const golpesB = analisarGolpes(b, dadosB, a)
   const melhorA = melhorGolpe(golpesA)
@@ -116,6 +138,7 @@ async function atualizar() {
   else veredito = 'Batalha equilibrada: qualquer um pode ganhar.'
 
   resultado.innerHTML = `
+    ${avisoEntreJogos}
     <div class="placar">
       <div class="placar-lado ${pct(sim.a) > pct(sim.b) ? 'vencedor' : ''}">
         <span class="placar-pct">${pct(sim.a)}%</span>
@@ -170,13 +193,18 @@ async function atualizar() {
 
 // ---------- Escolha dos Pokémon ----------
 function rotulo(p) {
-  return `${p.nome} · ${identificacao(p).replace(/<[^>]+>/g, '')} · IVs ${soma(p.ivs)}/186`
+  const jogo = plataformaAtual === ENTRE_JOGOS ? PLATAFORMAS[plataformaDe(p)].icone + ' ' + PLATAFORMAS[plataformaDe(p)].curto + ' · ' : ''
+  return `${jogo}${p.nome} · ${identificacao(p).replace(/<[^>]+>/g, '')} · IVs ${soma(p.ivs)}/186`
 }
 
 // ---------- Jogo: só batalham Pokémon do mesmo jogo ----------
+// Exceção: "Entre jogos" junta PokeMMO e jogos oficiais até a 5ª geração (#001 a #649)
+const ENTRE_JOGOS = 'entre'
 let plataformaAtual = plataformaSalva()
+let statusX1 = { ativo: false, motivo: 'Carregando...' }
 
 function doJogo() {
+  if (plataformaAtual === ENTRE_JOGOS) return todosPokemons.filter(podeX1EntreJogos)
   return todosPokemons.filter(p => plataformaDe(p) === plataformaAtual)
 }
 
@@ -186,18 +214,30 @@ function renderizarFiltroPlataforma() {
     return `<button type="button" role="tab" class="chip-plataforma ${id === plataformaAtual ? 'ativo' : ''}" data-plataforma="${id}" aria-selected="${id === plataformaAtual}">
       ${plat.icone} ${plat.nome} <span>${total}</span>
     </button>`
-  }).join('')
+  }).join('') + `<button type="button" role="tab" class="chip-plataforma ${plataformaAtual === ENTRE_JOGOS ? 'ativo' : ''} ${statusX1.ativo ? '' : 'desligado'}"
+      data-plataforma="${ENTRE_JOGOS}" aria-selected="${plataformaAtual === ENTRE_JOGOS}" title="PokeMMO x jogos oficiais até a 5ª geração">
+      🔀 Entre jogos <span>${todosPokemons.filter(podeX1EntreJogos).length}</span>
+    </button>`
 }
 
 // Preenche as duas listas com os Pokémon do jogo escolhido e começa com dois diferentes
 function trocarJogo(idA, idB) {
   renderizarFiltroPlataforma()
   const lista = doJogo()
+  if (plataformaAtual === ENTRE_JOGOS && !statusX1.ativo) {
+    selA.innerHTML = ''
+    selB.innerHTML = ''
+    document.getElementById('resultado').innerHTML = ''
+    statusEl.textContent = '🔀 ' + statusX1.motivo
+    return
+  }
   if (lista.length < 2) {
     selA.innerHTML = ''
     selB.innerHTML = ''
     document.getElementById('resultado').innerHTML = ''
-    statusEl.textContent = `É preciso ter pelo menos 2 Pokémon do ${PLATAFORMAS[plataformaAtual].nome} na base para simular uma batalha.`
+    statusEl.textContent = plataformaAtual === ENTRE_JOGOS
+      ? 'É preciso ter pelo menos 2 Pokémon que podem lutar entre jogos (PokeMMO ou jogos oficiais até a 5ª geração, #001 a #649).'
+      : `É preciso ter pelo menos 2 Pokémon do ${PLATAFORMAS[plataformaAtual].nome} na base para simular uma batalha.`
     return
   }
   statusEl.textContent = ''
@@ -212,7 +252,7 @@ document.getElementById('filtro-plataforma').addEventListener('click', function(
   const botao = evento.target.closest('[data-plataforma]')
   if (!botao) return
   plataformaAtual = botao.dataset.plataforma
-  salvarPlataforma(plataformaAtual)
+  if (plataformaAtual !== ENTRE_JOGOS) salvarPlataforma(plataformaAtual)
   trocarJogo()
 })
 
@@ -240,10 +280,18 @@ async function iniciar() {
   selA.addEventListener('change', atualizar)
   selB.addEventListener('change', atualizar)
 
-  // Link de batalha (batalha.html?a=...&b=...): abre no jogo do Pokémon 1
+  try {
+    statusX1 = await (await fetch('/api/x1-entre-jogos')).json()
+  } catch (erro) {
+    statusX1 = { ativo: false, motivo: 'Não foi possível verificar o x1 entre jogos agora.' }
+  }
+
+  // Link de batalha (batalha.html?a=...&b=...): abre no jogo do Pokémon 1, ou "Entre jogos" se forem de jogos diferentes
   const params = new URLSearchParams(location.search)
   const pokemonA = todosPokemons.find(p => p.id === params.get('a'))
+  const pokemonB = todosPokemons.find(p => p.id === params.get('b'))
   if (pokemonA) plataformaAtual = plataformaDe(pokemonA)
+  if (pokemonA && pokemonB && plataformaDe(pokemonA) !== plataformaDe(pokemonB)) plataformaAtual = ENTRE_JOGOS
   trocarJogo(params.get('a'), params.get('b'))
 }
 

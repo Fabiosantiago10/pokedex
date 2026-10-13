@@ -290,6 +290,7 @@ const campoPlataforma = document.getElementById('plataforma')
 // As estrelas do Juiz só aparecem nos jogos da Nintendo (os novos têm o Juiz na caixa do PC)
 function mostrarJuiz() {
   const nintendo = campoPlataforma.value === 'Nintendo'
+  document.getElementById('campo-geracao').hidden = !nintendo
   document.getElementById('secao-ivs').classList.toggle('nintendo', nintendo)
   if (!nintendo) limparEstrelas()
 }
@@ -552,6 +553,7 @@ async function salvarPokemon() {
   const pokemon = {
     treinador: treinador,
     plataforma: document.getElementById('plataforma').value,
+    geracaoJogo: document.getElementById('geracaoJogo').value,
     numero: document.getElementById('numero').value,
     nome: nome,
     tipo1: document.getElementById('tipo1').value,
@@ -678,7 +680,7 @@ const idEdicao = new URLSearchParams(location.search).get('editar')
 
 function preencherFormulario(p) {
   const campos = {
-    treinador: p.treinador, plataforma: plataformaDe(p), numero: p.numero, nome: p.nome, tipo1: p.tipo1, tipo2: p.tipo2 || '',
+    treinador: p.treinador, plataforma: plataformaDe(p), geracaoJogo: p.geracaoJogo || '', numero: p.numero, nome: p.nome, tipo1: p.tipo1, tipo2: p.tipo2 || '',
     natureza: p.natureza, habilidade: p.habilidade, nivel: p.nivel, proxNivel: p.proxNivel,
     apelido: p.apelido, sexo: p.sexo,
     felicidade: p.stats.felicidade
@@ -714,6 +716,8 @@ function aplicarTravas(p) {
       você pode corrigir qualquer dado (erro de digitação). Depois disso, só o que muda no jogo: nível, evolução, EVs, stats e ataques.`
   } else {
     ;['plataforma', 'natureza', 'sexo', 'alfa', 'shiny'].forEach(id => { document.getElementById(id).disabled = true })
+    // A geração do jogo pode ser informada uma vez por quem cadastrou antes do campo existir
+    if (p.geracaoJogo) document.getElementById('geracaoJogo').disabled = true
     document.getElementById('nivel').min = p.nivel
     const pokemmo = plataformaDe(p) === 'PokeMMO'
     if (pokemmo) {
@@ -777,7 +781,7 @@ if (idEdicao) iniciarEdicao()
 function limparFormulario() {
   document.querySelectorAll('.formulario-container input, .formulario-container select').forEach(function(campo) {
     // O nick continua: normalmente se cadastra vários Pokémon em sequência
-    if (campo.id === 'treinador' || campo.id === 'pin' || campo.id === 'inicial' || campo.id === 'plataforma') return
+    if (campo.id === 'treinador' || campo.id === 'pin' || campo.id === 'inicial' || campo.id === 'plataforma' || campo.id === 'geracaoJogo') return
     if (campo.type === 'checkbox' || campo.type === 'radio') {
       campo.checked = false
       return

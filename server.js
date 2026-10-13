@@ -4,7 +4,7 @@ const path = require('path')
 const crypto = require('crypto')
 const db = require('./db')
 const pokeapi = require('./pokeapi')
-const { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe } = require('./public/comum.js')
+const { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, GERACOES_NINTENDO, podeX1EntreJogos, statsQueNaoBatem } = require('./public/comum.js')
 
 const app = express()
 
@@ -188,6 +188,7 @@ async function validarPokemon(corpo) {
     tipo1: texto(corpo.tipo1, 15),
     tipo2: texto(corpo.tipo2, 15) || null,
     plataforma: texto(corpo.plataforma, 20),
+    geracaoJogo: corpo.plataforma === 'Nintendo' ? numero(corpo.geracaoJogo) : null,
     natureza: texto(corpo.natureza, 20),
     habilidade: texto(corpo.habilidade),
     // Para reconhecer o Pokémon no jogo (vários da mesma espécie parecem iguais no PC)
@@ -219,6 +220,7 @@ async function validarPokemon(corpo) {
 
   if (!pokemon.treinador) erros.push('Informe o seu nick do jogo')
   if (!PLATAFORMAS[pokemon.plataforma]) erros.push('Escolha de qual jogo é o Pokémon (PokeMMO, Pixelmon ou jogos oficiais)')
+  if (pokemon.plataforma === 'Nintendo' && !GERACOES_NINTENDO[pokemon.geracaoJogo]) erros.push('Escolha a geração do jogo (ex: FireRed é 3ª geração)')
   if (!pokemon.nome) erros.push('Informe o nome do Pokémon')
   if (soma(pokemon.evs) > 510) erros.push('O total de EVs não pode passar de 510')
   if (pokemon.nivel < 1 || pokemon.nivel > 100) erros.push('O nível deve estar entre 1 e 100')
@@ -338,6 +340,8 @@ async function validarEdicao(original, novo) {
   const plataforma = plataformaDe(original)
 
   if (novo.plataforma !== plataforma) erros.push('O jogo não pode mudar depois do cadastro')
+  // Quem cadastrou antes do campo existir pode informar a geração uma vez; depois ela não muda
+  if (original.geracaoJogo && novo.geracaoJogo !== original.geracaoJogo) erros.push('A geração do jogo não pode mudar depois do cadastro')
   if (novo.nivel < original.nivel) erros.push(`O nível não pode diminuir (estava no Nv ${original.nivel})`)
   if (novo.natureza !== original.natureza) erros.push(`A natureza não muda no jogo (é ${original.natureza || 'neutra'})`)
   if (novo.sexo !== (original.sexo || '')) erros.push('O sexo não muda no jogo')
@@ -388,6 +392,41 @@ async function validarEdicao(original, novo) {
   }
   return erros
 }
+
+// ---------- x1 entre jogos (PokeMMO x jogos oficiais até a 5ª geração) ----------
+// Desliga na hora com a variável X1_ENTRE_JOGOS=desligado no Render.
+// Também se desliga sozinho se muitos Pokémon da base deixarem de bater com a fórmula
+// (sinal de que os jogos estão com dados diferentes, e a comparação deixou de ser justa).
+const MINIMO_QUE_BATE = 0.8
+let statusX1 = null
+let statusX1Em = 0
+
+async function calcularStatusX1() {
+  if (String(process.env.X1_ENTRE_JOGOS || '').toLowerCase() === 'desligado') {
+    return { ativo: false, motivo: 'O x1 entre jogos foi desligado pelo administrador.' }
+  }
+  const elegiveis = pokemons.filter(podeX1EntreJogos)
+  let batem = 0
+  for (const p of elegiveis) {
+    if (statsQueNaoBatem(p, await statsBase(p.nome)).length === 0) batem++
+  }
+  const proporcao = elegiveis.length ? batem / elegiveis.length : 1
+  const resumo = { elegiveis: elegiveis.length, batem, proporcao: Math.round(proporcao * 100) }
+  if (elegiveis.length >= 5 && proporcao < MINIMO_QUE_BATE) {
+    return { ativo: false, ...resumo,
+      motivo: `Desativado automaticamente: só ${resumo.proporcao}% dos Pokémon que podem lutar entre jogos batem com a fórmula (mínimo ${MINIMO_QUE_BATE * 100}%). Os dados dos jogos estão ficando diferentes.` }
+  }
+  return { ativo: true, ...resumo }
+}
+
+app.get('/api/x1-entre-jogos', async function(req, res) {
+  // Recalcula no máximo a cada 5 minutos
+  if (!statusX1 || Date.now() - statusX1Em > 5 * 60 * 1000) {
+    statusX1 = await calcularStatusX1()
+    statusX1Em = Date.now()
+  }
+  res.json(statusX1)
+})
 
 // ---------- Rotas ----------
 app.get('/api/status', function(req, res) {
