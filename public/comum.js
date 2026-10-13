@@ -69,7 +69,27 @@ const JOGOS_NINTENDO = {
 }
 
 // Último número da Pokédex que existe em cada geração
-const ULTIMO_NUMERO_GERACAO = { 3: 386, 4: 493, 5: 649, 6: 721, 7: 809, 8: 905, 9: 1025 }
+const ULTIMO_NUMERO_GERACAO = { 1: 151, 2: 251, 3: 386, 4: 493, 5: 649, 6: 721, 7: 809, 8: 905, 9: 1025 }
+
+// Geração em que a espécie apareceu (ex: #019 Rattata = 1ª, #501 Oshawott = 5ª)
+function geracaoDaEspecie(numero) {
+  const n = parseInt(numero, 10)
+  for (let g = 1; g <= 9; g++) if (n <= ULTIMO_NUMERO_GERACAO[g]) return g
+  return null
+}
+
+// Emulador: em quais gerações de jogo este Pokémon pode estar?
+// 1) pelo número: a partir da geração em que a espécie apareceu (e da 3ª, quando os IVs/EVs ficaram como hoje);
+// 2) pelos stats: nas espécies que tiveram status base mudados, só ficam as gerações em que os stats batem.
+function geracoesPossiveis(p, dados) {
+  const inicio = Math.max(3, geracaoDaEspecie(p.numero) || 3)
+  let geracoes = [3, 4, 5, 6, 7, 8, 9].filter(g => g >= inicio)
+  const temStats = p.stats && ATRIBUTOS.every(a => p.stats[a] > 0) && p.nivel >= 1
+  if (dados && (dados.basesAntigas || []).length && temStats) {
+    geracoes = geracoes.filter(g => statsQueNaoBatem({ ...p, plataforma: 'Nintendo' }, baseNaGeracao(dados, g)).length === 0)
+  }
+  return geracoes
+}
 
 // Status base da espécie num jogo de certa geração. Sem geração (PokeMMO, Pixelmon), usa os atuais:
 // o PokeMMO usa os status base novos (ex: Pidgeot com Velocidade 101), conferido com Pokémon da base.
@@ -87,13 +107,6 @@ function baseNaGeracao(dados, geracao) {
 
 function baseDoPokemon(p, dados) {
   return baseNaGeracao(dados, plataformaDe(p) === 'Nintendo' ? Number(p.geracaoJogo) || null : null)
-}
-
-// Com quais gerações os stats batem? Só dá para saber nas espécies que tiveram status base mudados.
-// Devolve null quando a espécie nunca mudou (os stats não dizem nada sobre o jogo).
-function geracoesQueBatem(p, dados) {
-  if (!dados || !(dados.basesAntigas || []).length) return null
-  return [3, 4, 5, 6, 7, 8, 9].filter(g => statsQueNaoBatem({ ...p, plataforma: 'Nintendo' }, baseNaGeracao(dados, g)).length === 0)
 }
 
 // Nome do jogo para mostrar: "FireRed", "PokeMMO", "Pixelmon"...
@@ -329,5 +342,5 @@ function salvarTreinador(nick) {
 
 // O servidor (Node) usa a mesma fórmula de stats, para a nota bater com o que aparece na tela
 if (typeof module !== 'undefined') {
-  module.exports = { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem, baseNaGeracao, baseDoPokemon }
+  module.exports = { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem, baseNaGeracao, baseDoPokemon, geracoesPossiveis }
 }

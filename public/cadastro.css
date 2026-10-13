@@ -440,3 +440,14 @@ main.formulario-container {
   color: #b00000;
   font-weight: 600;
 }
+
+.geracao-detectada {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a8f3c;
+}
+
+.geracao-detectada.erro-geracao {
+  color: #b00000;
+}

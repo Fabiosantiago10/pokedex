@@ -73,10 +73,14 @@ Object.keys(LIMITES).forEach(function(id) {
 let baseAtual = null  // stats base da espécie escolhida, no jogo escolhido (vêm da PokéAPI)
 let dadosEspecieAtual = null  // dados oficiais da espécie (com os status base antigos de cada geração)
 
-// No emulador, usa os status base da geração do jogo (ex: Pidgeot no FireRed tem Velocidade 91)
+// No emulador, usa os status base da geração do jogo (ex: Pidgeot no FireRed tem Velocidade 91).
+// A geração vem do jogo salvo (cadastros antigos) ou é descoberta pelo número e pelos stats.
+let geracoesDetectadas = []
+
 function geracaoDoFormulario() {
-  const jogo = document.getElementById('plataforma').value === 'Nintendo' && JOGOS_NINTENDO[document.getElementById('jogoNintendo').value]
-  return jogo ? jogo.geracao : null
+  if (document.getElementById('plataforma').value !== 'Nintendo') return null
+  const jogo = JOGOS_NINTENDO[document.getElementById('jogoNintendo').value]
+  return jogo ? jogo.geracao : (geracoesDetectadas[0] || null)
 }
 
 function recalcularBase() {
@@ -300,49 +304,43 @@ let infoNick = null  // { temPin, temInicial } do treinador logado
 // O jogo fica escolhido para os próximos cadastros
 const campoPlataforma = document.getElementById('plataforma')
 // As estrelas do Juiz só aparecem nos jogos da Nintendo (os novos têm o Juiz na caixa do PC)
-// Jogo da Nintendo: lembra o último escolhido e só deixa escolher jogos em que o Pokémon existe
+// Emulador: a geração do jogo é descoberta pelo número da Pokédex e pelos stats (sem perguntar o jogo)
 const campoJogo = document.getElementById('jogoNintendo')
-try { campoJogo.value = localStorage.getItem('jogoNintendo') || '' } catch (e) {}
+
+function textoGeracoes(lista) {
+  return lista.length === 1 ? `${lista[0]}ª geração` : `${lista[0]}ª à ${lista[lista.length - 1]}ª geração`
+}
 
 function atualizarJogos() {
-  const numero = parseInt(document.getElementById('numero').value, 10)
-  campoJogo.querySelectorAll('option[value]').forEach(function(opcao) {
-    const jogo = JOGOS_NINTENDO[opcao.value]
-    if (!jogo) return
-    opcao.disabled = numero > ULTIMO_NUMERO_GERACAO[jogo.geracao]
-  })
-  if (campoJogo.selectedOptions[0] && campoJogo.selectedOptions[0].disabled) campoJogo.value = ''
-  const jogo = JOGOS_NINTENDO[campoJogo.value]
   const info = document.getElementById('info-jogo')
   info.classList.remove('erro-geracao')
-  info.textContent = !jogo
-    ? 'Até a 5ª geração, ele pode fazer x1 com Pokémon do PokeMMO.'
-    : `${jogo.geracao}ª geração${jogo.geracao <= 5 ? ': pode fazer x1 com Pokémon do PokeMMO.' : '.'}`
-  if (dadosEspecieAtual) recalcularBase()
-  conferirGeracao()
-}
-
-// Espécies que tiveram status base mudados (ex: Pidgeot, Raichu, Alakazam) denunciam a geração pelos stats.
-// Se os stats não batem com o jogo escolhido, avisa com quais gerações eles batem.
-function conferirGeracao() {
   const jogo = JOGOS_NINTENDO[campoJogo.value]
-  const nivel = valor('nivel')
-  if (!jogo || !dadosEspecieAtual || document.getElementById('plataforma').value !== 'Nintendo') return
-  if (nivel < 1 || ATRIBUTOS.some(a => !valor(a))) return
-  const p = { nivel, natureza: document.getElementById('natureza').value, stats: statsDoFormulario(), evs: lerIvsEvs().evs }
-  const batem = geracoesQueBatem(p, dadosEspecieAtual)
-  if (!batem || batem.includes(jogo.geracao)) return
-  const info = document.getElementById('info-jogo')
-  info.classList.add('erro-geracao')
-  info.textContent = batem.length
-    ? `⚠️ Os stats deste ${dadosEspecieAtual.nome} batem com jogos da ${batem[0]}ª${batem.length > 1 ? ' à ' + batem[batem.length - 1] + 'ª' : ''} geração, não com o ${jogo.nome}. Confira o jogo e os stats.`
-    : `⚠️ Os stats deste ${dadosEspecieAtual.nome} não batem com nenhuma geração. Confira os stats, o nível e a natureza.`
+  const numero = parseInt(document.getElementById('numero').value, 10)
+  if (jogo) {
+    // Cadastro antigo, com o jogo já salvo
+    geracoesDetectadas = [jogo.geracao]
+    info.textContent = `${jogo.nome} (${jogo.geracao}ª geração)${jogo.geracao <= 5 && numero <= 649 ? ' · pode fazer x1 com o PokeMMO' : ''}`
+  } else if (!numero) {
+    geracoesDetectadas = []
+    info.textContent = 'Preencha o número e os stats: a geração é descoberta sozinha.'
+  } else {
+    const nivel = valor('nivel')
+    const p = { numero, nivel, natureza: document.getElementById('natureza').value, stats: statsDoFormulario(), evs: lerIvsEvs().evs }
+    geracoesDetectadas = geracoesPossiveis(p, dadosEspecieAtual)
+    const mudou = dadosEspecieAtual && (dadosEspecieAtual.basesAntigas || []).length > 0
+    if (geracoesDetectadas.length === 0) {
+      info.classList.add('erro-geracao')
+      info.textContent = '⚠️ Os stats não batem com nenhuma geração de jogo. Confira os stats, o nível e a natureza.'
+    } else {
+      const x1 = geracoesDetectadas[0] <= 5 && numero <= 649 ? ' · pode fazer x1 com o PokeMMO' : ''
+      info.textContent = mudou && ATRIBUTOS.every(a => p.stats[a])
+        ? `Pelos stats: jogo da ${textoGeracoes(geracoesDetectadas)}${x1}`
+        : `Jogo da ${textoGeracoes(geracoesDetectadas)} (os status base dele são iguais em todas)${x1}`
+    }
+  }
+  if (dadosEspecieAtual) recalcularBase()
 }
 
-campoJogo.addEventListener('change', function() {
-  try { localStorage.setItem('jogoNintendo', campoJogo.value) } catch (e) {}
-  atualizarJogos()
-})
 document.getElementById('numero').addEventListener('change', atualizarJogos)
 
 function mostrarJuiz() {
@@ -503,9 +501,9 @@ async function carregarEspecie(nome) {
     especieCarregada = dados.nome
     mostrarPreview(dados)
     dadosEspecieAtual = dados
-    recalcularBase()
     campoNome.value = dados.nome
     document.getElementById('numero').value = dados.numero
+    atualizarJogos()
     document.getElementById('tipo1').value = dados.tipos[0] || ''
     document.getElementById('tipo2').value = dados.tipos[1] || ''
 
@@ -873,5 +871,5 @@ function limparFormulario() {
   atualizarTotalIV()
 }
 
-// Ao mexer nos stats, nível ou natureza, confere de novo se batem com o jogo escolhido
-;['nivel', 'natureza', ...ATRIBUTOS].forEach(id => document.getElementById(id).addEventListener('change', conferirGeracao))
+// Ao mexer nos stats, nível ou natureza, descobre a geração de novo
+;['nivel', 'natureza', ...ATRIBUTOS].forEach(id => document.getElementById(id).addEventListener('change', atualizarJogos))

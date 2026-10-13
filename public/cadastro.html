@@ -68,8 +68,10 @@
           <small class="status-pin">Só é comparado e batalha com Pokémon do mesmo jogo.</small>
         </div>
         <div class="campo" id="campo-geracao" hidden>
-          <label>Qual jogo no emulador?</label>
-          <select id="jogoNintendo">
+          <label>Geração do jogo</label>
+          <p id="info-jogo" class="geracao-detectada">Preencha o número e os stats: a geração é descoberta sozinha.</p>
+          <!-- Só para Pokémon antigos que já têm o jogo salvo -->
+          <select id="jogoNintendo" hidden>
             <option value="">Selecione...</option>
             <optgroup label="3ª geração (x1 com o PokeMMO)">
               <option value="ruby">Ruby</option>
@@ -114,7 +116,6 @@
               <option value="violet">Violet</option>
             </optgroup>
           </select>
-          <small class="status-pin" id="info-jogo">Até a 5ª geração, ele pode fazer x1 com Pokémon do PokeMMO.</small>
         </div>
         <div class="campo">
           <label>Número na Pokédex</label>

@@ -4,7 +4,7 @@ const path = require('path')
 const crypto = require('crypto')
 const db = require('./db')
 const pokeapi = require('./pokeapi')
-const { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem, baseDoPokemon } = require('./public/comum.js')
+const { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem, baseDoPokemon, geracoesPossiveis } = require('./public/comum.js')
 
 const app = express()
 
@@ -223,7 +223,6 @@ async function validarPokemon(corpo) {
 
   if (!pokemon.treinador) erros.push('Informe o seu nick do jogo')
   if (!PLATAFORMAS[pokemon.plataforma]) erros.push('Escolha de qual jogo é o Pokémon (PokeMMO, Pixelmon ou emulador)')
-  if (pokemon.plataforma === 'Nintendo' && !pokemon.jogoNintendo) erros.push('Escolha qual jogo você joga no emulador (ex: FireRed)')
   if (!pokemon.nome) erros.push('Informe o nome do Pokémon')
   if (soma(pokemon.evs) > 510) erros.push('O total de EVs não pode passar de 510')
   if (pokemon.nivel < 1 || pokemon.nivel > 100) erros.push('O nível deve estar entre 1 e 100')
@@ -235,6 +234,18 @@ async function validarPokemon(corpo) {
   const ultimo = pokemon.geracaoJogo && ULTIMO_NUMERO_GERACAO[pokemon.geracaoJogo]
   if (ultimo && parseInt(pokemon.numero, 10) > ultimo) {
     erros.push(`${pokemon.nome} (#${pokemon.numero}) não existe no ${JOGOS_NINTENDO[pokemon.jogoNintendo].nome}: ele só tem até o #${String(ultimo).padStart(3, '0')}`)
+  }
+  // Emulador sem jogo informado: a geração sai do número da Pokédex e dos stats
+  if (pokemon.plataforma === 'Nintendo' && !pokemon.jogoNintendo && pokemon.nome && erros.length === 0) {
+    let dados = null
+    try { dados = await pokeapi.dadosDoPokemon(pokemon.nome) } catch (e) { dados = null }
+    const geracoes = geracoesPossiveis(pokemon, dados)
+    if (geracoes.length === 0) {
+      erros.push(`Os stats deste ${pokemon.nome} não batem com nenhuma geração de jogo. Confira os stats, o nível e a natureza.`)
+    } else {
+      pokemon.geracoesPossiveis = geracoes
+      pokemon.geracaoJogo = geracoes[0]
+    }
   }
   return { pokemon, erros }
 }
