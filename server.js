@@ -297,6 +297,20 @@ function encontrarRepetido(pokemon, ignorarId) {
   )
 }
 
+// Histórico: a cada edição guarda como o Pokémon estava antes (nível, espécie, stats, ataques...).
+// Serve para comparar a evolução e estimar os EVs ganhos entre um save e outro.
+const CAMPOS_HISTORICO = ['nome', 'numero', 'tipo1', 'tipo2', 'nivel', 'natureza', 'habilidade', 'stats', 'ivs', 'evs', 'movimentos']
+const MAX_HISTORICO = 50
+
+function adicionarAoHistorico(original, novo) {
+  const historico = Array.isArray(original.historico) ? original.historico : []
+  const foto = Object.fromEntries(CAMPOS_HISTORICO.map(c => [c, original[c]]))
+  const mudou = CAMPOS_HISTORICO.some(c => JSON.stringify(original[c]) !== JSON.stringify(novo[c]))
+  if (!mudou) return historico
+  foto.data = original.atualizadoEm || original.criadoEm
+  return historico.concat(foto).slice(-MAX_HISTORICO)
+}
+
 // ---------- Rotas ----------
 app.get('/api/status', function(req, res) {
   res.json({ mensagem: 'Servidor da Pokédex funcionando!', total: pokemons.length })
@@ -305,7 +319,7 @@ app.get('/api/status', function(req, res) {
 // O que é público não diz de quem é o Pokémon: sem treinador e sem apelido.
 // Só o próprio treinador vê esses dados, em "Meus Pokémon" (com o PIN).
 function publico(pokemon) {
-  const { treinador, apelido, leituras, ...resto } = pokemon
+  const { treinador, apelido, leituras, historico, ...resto } = pokemon
   return resto
 }
 
@@ -489,6 +503,7 @@ app.put('/api/pokemons/:id', async function(req, res) {
   pokemon.id = original.id
   pokemon.treinador = original.treinador
   pokemon.criadoEm = original.criadoEm
+  pokemon.historico = adicionarAoHistorico(original, pokemon)
   pokemon.atualizadoEm = new Date().toISOString()
   pokemon.pontuacao = await pontuar(pokemon)
 

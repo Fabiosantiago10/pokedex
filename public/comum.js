@@ -38,9 +38,9 @@ function selosVariante(p) {
 // Jogo de onde veio o Pokémon. Ranking e batalhas só comparam Pokémon do mesmo jogo,
 // porque cada um tem regras próprias (status base, poder dos ataques, tabela de tipos).
 const PLATAFORMAS = {
-  PokeMMO:  { nome: 'PokeMMO', icone: '🎮' },
-  Pixelmon: { nome: 'Pixelmon (Minecraft)', icone: '⛏️' },
-  Nintendo: { nome: 'Jogos oficiais (Nintendo)', icone: '🕹️' }
+  PokeMMO:  { nome: 'PokeMMO', curto: 'PokeMMO', icone: '🎮' },
+  Pixelmon: { nome: 'Pixelmon (Minecraft)', curto: 'Pixelmon', icone: '⛏️' },
+  Nintendo: { nome: 'Jogos oficiais (Nintendo)', curto: 'Nintendo', icone: '🕹️' }
 }
 
 // Pokémon cadastrados antes do campo existir são todos do PokeMMO
@@ -50,7 +50,7 @@ function plataformaDe(p) {
 
 function seloPlataforma(p) {
   const plat = PLATAFORMAS[plataformaDe(p)]
-  return `<span class="selo selo-plataforma" title="${plat.nome}">${plat.icone} ${plat.nome.replace(/ (.*)/, '')}</span>`
+  return `<span class="selo selo-plataforma" title="${plat.nome}">${plat.icone} ${plat.curto}</span>`
 }
 
 // Preferência de jogo (filtros da Pokédex e da Batalha, e o campo do cadastro)

@@ -645,7 +645,7 @@ async function salvarPokemon() {
     if (idEdicao) {
       divResultado.innerHTML = `
         <div class="comparacao-melhor">
-          ✏️ Alterações salvas! ${nomeSeguro} agora está em ${comp.posicao}º de ${comp.total} da espécie. ${link}
+          ✏️ Alterações salvas! ${nomeSeguro} agora está em ${comp.posicao}º de ${comp.total} da espécie. ${link} · <a href="historico.html?id=${encodeURIComponent(salvo.id)}">📜 Ver histórico</a>
         </div>
       `
       divResultado.scrollIntoView({ behavior: 'smooth', block: 'center' })

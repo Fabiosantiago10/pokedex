@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Histórico do Pokémon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="historico.css">
+</head>
+
+<body>
+
+  <header class="topo">
+    <div class="topo-conteudo">
+      <a href="index.html" class="marca"><span class="pokebola"></span> Minha Pokédex</a>
+      <nav>
+        <a href="index.html">Pokédex</a>
+        <a href="batalha.html">Batalha</a>
+        <a href="meus.html" class="ativo">Meus Pokémon</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="secao-pagina">
+    <div class="abas-treinador">
+      <span class="logado-como">Treinador: <strong id="nick-logado"></strong></span>
+      <div class="abas-botoes">
+        <a href="meus.html" class="aba">📋 Meus Pokémon cadastrados</a>
+        <a href="cadastro.html" class="aba">➕ Cadastrar Pokémon</a>
+        <a href="dicas.html" class="aba">💡 Dicas e builds</a>
+        <button type="button" class="aba aba-sair" id="sair">Sair</button>
+      </div>
+    </div>
+
+    <h2 class="titulo-secao">📜 Histórico</h2>
+    <p class="intro">
+      Cada vez que você edita e salva este Pokémon, a versão anterior fica guardada aqui.
+      Comparando um save com o outro, o site estima quantos EVs ele ganhou e que tipo de Pokémon ele derrotou.
+    </p>
+    <p id="status" class="status"></p>
+    <div id="historico"></div>
+  </section>
+
+  <script src="comum.js"></script>
+  <script src="historico.js"></script>
+
+</body>
+
+</html>

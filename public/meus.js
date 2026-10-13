@@ -63,6 +63,7 @@ function htmlGrupo(grupo) {
               <td class="col-acoes">
                 <a class="link-editar" href="cadastro.html?editar=${encodeURIComponent(p.id)}">Editar</a>
                 <a class="link-editar" href="dicas.html?id=${encodeURIComponent(p.id)}">💡 Builds</a>
+                <a class="link-editar" href="historico.html?id=${encodeURIComponent(p.id)}">📜 Histórico</a>
               </td>
             </tr>
           `).join('')}
