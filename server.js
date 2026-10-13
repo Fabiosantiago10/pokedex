@@ -200,6 +200,15 @@ async function validarPokemon(corpo) {
     stats: { felicidade: numero(corpo.stats && corpo.stats.felicidade) },
     evs: {},
     ivs: {},
+    // Stats anotados em outros níveis: ajudam a descobrir os IVs nos jogos que não os mostram
+    leituras: (Array.isArray(corpo.leituras) ? corpo.leituras : [])
+      .slice(0, 20)
+      .map(l => ({
+        nivel: numero(l && l.nivel),
+        stats: Object.fromEntries(ATRIBUTOS.map(a => [a, numero(l && l.stats && l.stats[a])])),
+        evs: Object.fromEntries(ATRIBUTOS.map(a => [a, Math.min(252, Math.max(0, numero(l && l.evs && l.evs[a])))]))
+      }))
+      .filter(l => l.nivel >= 1 && l.nivel <= 100 && ATRIBUTOS.every(a => l.stats[a] >= 1 && l.stats[a] <= 999)),
     movimentos: (Array.isArray(corpo.movimentos) ? corpo.movimentos : [])
       .slice(0, 4)
       .map(m => ({ nome: texto(m && m.nome), tipo: texto(m && m.tipo, 15) }))
@@ -296,7 +305,7 @@ app.get('/api/status', function(req, res) {
 // O que é público não diz de quem é o Pokémon: sem treinador e sem apelido.
 // Só o próprio treinador vê esses dados, em "Meus Pokémon" (com o PIN).
 function publico(pokemon) {
-  const { treinador, apelido, ...resto } = pokemon
+  const { treinador, apelido, leituras, ...resto } = pokemon
   return resto
 }
 

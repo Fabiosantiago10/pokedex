@@ -115,9 +115,9 @@ const NOMES_STATS = {
 
 async function dadosDoPokemon(nome) {
   const slug = paraSlug(nome)
-  // Entradas antigas do cache não têm os stats base nem o poder dos ataques: busca de novo
+  // Entradas antigas do cache não têm os stats base, os EVs que rende ou o poder dos ataques: busca de novo
   const salvo = cache.pokemons[slug]
-  if (salvo && salvo.base && (salvo.ataques.length === 0 || 'categoria' in salvo.ataques[0])) return salvo
+  if (salvo && salvo.base && salvo.rendeEvs && (salvo.ataques.length === 0 || 'categoria' in salvo.ataques[0])) return salvo
 
   // A espécie diz qual é a forma padrão (ex: "deoxys" -> "deoxys-normal")
   const especie = await buscarJson(`${API}/pokemon-species/${slug}`)
@@ -141,6 +141,8 @@ async function dadosDoPokemon(nome) {
     habilidades: pokemon.abilities.map(h => formatarNome(h.ability.name)),
     // Stats base da espécie, usados para calcular os stats em qualquer nível
     base: Object.fromEntries(pokemon.stats.map(s => [NOMES_STATS[s.stat.name], s.base_stat])),
+    // EVs que ele dá a quem o derrota (ex: Pidgey -> 1 de Velocidade)
+    rendeEvs: Object.fromEntries(pokemon.stats.map(s => [NOMES_STATS[s.stat.name], s.effort])),
     ataques: ataques.filter(Boolean).sort((a, b) => a.nome.localeCompare(b.nome))
   }
 

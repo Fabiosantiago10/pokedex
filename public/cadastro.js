@@ -112,38 +112,70 @@ function preencherStatsCalculados() {
   ATRIBUTOS.forEach(a => { document.getElementById(a).value = stats[a] })
 }
 
-// Descobre os IVs a partir dos stats (para jogos que não mostram os IVs, como os da Nintendo).
-// Testa os 32 valores possíveis de cada IV e fica com os que dão exatamente o stat informado.
+// ---------- Descobrir IVs (jogos que não mostram os IVs, como os da Nintendo) ----------
+// Testa os 32 valores possíveis de cada IV e fica com os que dão exatamente os stats anotados.
+// Cada leitura de outro nível corta mais valores: com 2 ou 3 níveis, quase sempre sobra um só.
+let leituras = []   // [{ nivel, stats, evs }] guardadas pelo botão "Guardar stats deste nível"
+
+// Estrelas do Juiz -> faixa de IV
+const FAIXAS_JUIZ = { 1: [0, 10], 2: [11, 20], 3: [21, 29], 4: [30, 30], 5: [31, 31] }
+
+function statsDoFormulario() {
+  return Object.fromEntries(ATRIBUTOS.map(a => [a, valor(a)]))
+}
+
+function guardarLeitura() {
+  const nivel = valor('nivel')
+  const stats = statsDoFormulario()
+  if (nivel < 1 || nivel > 100 || ATRIBUTOS.some(a => !stats[a])) {
+    alert('Preencha o nível e os 6 stats antes de guardar.')
+    return
+  }
+  // Guarda os EVs daquele momento: entre um nível e outro ele pode ter ganhado mais
+  leituras = leituras.filter(l => l.nivel !== nivel).concat({ nivel, stats, evs: lerIvsEvs().evs }).sort((a, b) => a.nivel - b.nivel)
+  mostrarLeituras()
+}
+
+function removerLeitura(nivel) {
+  leituras = leituras.filter(l => l.nivel !== nivel)
+  mostrarLeituras()
+}
+
+function mostrarLeituras() {
+  document.getElementById('leituras').innerHTML = leituras.length
+    ? 'Stats guardados: ' + leituras.map(l =>
+        `<span class="chip-leitura" title="${ATRIBUTOS.map(a => ABREVIACOES[a] + ' ' + l.stats[a]).join(' · ')}">Nv ${l.nivel}
+          <button type="button" onclick="removerLeitura(${l.nivel})" aria-label="Remover">×</button></span>`).join('')
+    : ''
+}
+
 function descobrirIvs() {
   const nivel = valor('nivel')
   if (!baseAtual) return
-  if (nivel < 1 || nivel > 100) {
-    alert('Preencha o Nível Atual (1 a 100) primeiro.')
-    return
-  }
   const natureza = document.getElementById('natureza').value
   const { evs } = lerIvsEvs()
+  // Leituras guardadas + o que está no formulário agora
+  const todas = leituras.filter(l => l.nivel !== nivel)
+  if (nivel >= 1 && nivel <= 100) todas.push({ nivel, stats: statsDoFormulario(), evs })
+  if (todas.length === 0) {
+    alert('Preencha o nível e os stats primeiro.')
+    return
+  }
   ATRIBUTOS.forEach(function(a) {
     const s = SUFIXOS[a]
     const faixa = document.getElementById('faixa' + s)
-    const stat = document.getElementById(a).value.trim()
-    const juiz = document.getElementById('juiz' + s).value
+    const estrelas = Number(document.getElementById('juiz' + s).dataset.valor)
     let possiveis = Array.from({ length: 32 }, (_, iv) => iv)
-    if (stat) {
-      const alvo = valor(a)
-      possiveis = possiveis.filter(iv => calcularStats(baseAtual, { [a]: iv }, { [a]: evs[a] }, natureza, nivel)[a] === alvo)
-    }
-    if (juiz) {
-      const [min, max] = juiz.split('-').map(Number)
+    todas.filter(l => l.stats[a]).forEach(function(l) {
+      possiveis = possiveis.filter(iv => calcularStats(baseAtual, { [a]: iv }, { [a]: (l.evs || evs)[a] }, natureza, l.nivel)[a] === l.stats[a])
+    })
+    if (estrelas) {
+      const [min, max] = FAIXAS_JUIZ[estrelas]
       possiveis = possiveis.filter(iv => iv >= min && iv <= max)
     }
     faixa.className = 'faixa-iv'
-    if (!stat && !juiz) {
-      faixa.textContent = 'Preencha o stat ou o Juiz'
-      return
-    }
     if (possiveis.length === 0) {
-      faixa.textContent = 'Nenhum IV bate: confira stat, nível, natureza e EVs'
+      faixa.textContent = 'Não bate: confira os dados'
       faixa.classList.add('erro')
       return
     }
@@ -151,14 +183,69 @@ function descobrirIvs() {
     const max = possiveis[possiveis.length - 1]
     // Com mais de um valor possível, fica com o do meio (a faixa aparece embaixo)
     document.getElementById('iv' + s).value = possiveis[Math.floor((possiveis.length - 1) / 2)]
-    if (min === max) {
-      faixa.textContent = '✔ IV exato: ' + min
-      faixa.classList.add('exato')
-    } else {
-      faixa.textContent = `Entre ${min} e ${max}`
-    }
+    faixa.textContent = min === max ? '✔ exato' : `${min} a ${max}`
+    if (min === max) faixa.classList.add('exato')
   })
   atualizarTotalIV()
+}
+
+// Estrelas do Juiz: clicar marca, clicar de novo na mesma desmarca
+document.getElementById('secao-ivs').addEventListener('click', function(evento) {
+  const botao = evento.target.closest('.estrelas button')
+  if (!botao) return
+  const caixa = botao.parentElement
+  const n = Number(botao.dataset.n)
+  caixa.dataset.valor = Number(caixa.dataset.valor) === n ? 0 : n
+  caixa.querySelectorAll('button').forEach(b => b.classList.toggle('acesa', Number(b.dataset.n) <= Number(caixa.dataset.valor)))
+})
+
+function limparEstrelas() {
+  document.querySelectorAll('.estrelas').forEach(function(caixa) {
+    caixa.dataset.valor = 0
+    caixa.querySelectorAll('button').forEach(b => b.classList.remove('acesa'))
+  })
+}
+
+// ---------- Contador de EVs ----------
+// Cada Pokémon derrotado dá EVs num stat (ex: Pidgey = 1 de Velocidade). Soma nos campos de EV.
+async function contarEvs() {
+  const nome = document.getElementById('derrotado').value.trim()
+  const qtd = Math.max(1, valor('derrotado-qtd'))
+  const status = document.getElementById('status-evs')
+  if (!nome) return
+  status.textContent = 'Buscando ' + nome + '...'
+  try {
+    const resposta = await fetch('/api/especies/' + encodeURIComponent(nome))
+    if (resposta.status === 404) {
+      status.textContent = `"${nome}" não é um Pokémon.`
+      return
+    }
+    const dados = await resposta.json()
+    const fator = qtd * (document.getElementById('derrotado-dobro').checked ? 2 : 1)
+    const ganhos = []
+    let total = ATRIBUTOS.reduce((t, a) => t + valor('ev' + SUFIXOS[a]), 0)
+    ATRIBUTOS.forEach(function(a) {
+      const rende = (dados.rendeEvs && dados.rendeEvs[a]) || 0
+      if (!rende) return
+      const campo = document.getElementById('ev' + SUFIXOS[a])
+      // Respeita os limites: 252 por stat e 510 no total
+      const soma = Math.min(rende * fator, 252 - valor('ev' + SUFIXOS[a]), 510 - total)
+      if (soma <= 0) return
+      campo.value = valor('ev' + SUFIXOS[a]) + soma
+      total += soma
+      ganhos.push(`+${soma} ${NOMES_ATRIBUTOS[a]}`)
+    })
+    atualizarTotalEV()
+    atualizarProjecao()
+    status.textContent = ganhos.length
+      ? `✔ ${dados.nome} ×${qtd}: ${ganhos.join(', ')}`
+      : `${dados.nome} não somou nada (limite de EVs atingido).`
+    document.getElementById('derrotado').value = ''
+    document.getElementById('derrotado-qtd').value = 1
+  } catch (erro) {
+    status.textContent = 'Não foi possível buscar agora. Tente de novo.'
+    console.error(erro)
+  }
 }
 
 // Atualiza o total de EVs em tempo real
@@ -185,16 +272,12 @@ let infoNick = null  // { temPin, temInicial } do treinador logado
 
 // O jogo fica escolhido para os próximos cadastros
 const campoPlataforma = document.getElementById('plataforma')
-// O Juiz só existe nos jogos novos da Nintendo: a opção aparece no Nintendo, e os campos só se a pessoa marcar
-const caixaJuiz = document.getElementById('tem-juiz')
+// As estrelas do Juiz só aparecem nos jogos da Nintendo (os novos têm o Juiz na caixa do PC)
 function mostrarJuiz() {
-  const secao = document.getElementById('secao-ivs')
   const nintendo = campoPlataforma.value === 'Nintendo'
-  secao.classList.toggle('nintendo', nintendo)
-  secao.classList.toggle('com-juiz', nintendo && caixaJuiz.checked)
-  if (!secao.classList.contains('com-juiz')) document.querySelectorAll('.juiz-iv').forEach(s => { s.value = '' })
+  document.getElementById('secao-ivs').classList.toggle('nintendo', nintendo)
+  if (!nintendo) limparEstrelas()
 }
-caixaJuiz.addEventListener('change', mostrarJuiz)
 campoPlataforma.value = plataformaSalva()
 mostrarJuiz()
 campoPlataforma.addEventListener('change', function() {
@@ -454,6 +537,7 @@ async function salvarPokemon() {
   const pokemon = {
     treinador: treinador,
     plataforma: document.getElementById('plataforma').value,
+    leituras: leituras,
     numero: document.getElementById('numero').value,
     nome: nome,
     tipo1: document.getElementById('tipo1').value,
@@ -591,6 +675,8 @@ function preencherFormulario(p) {
   Object.entries(campos).forEach(([id, v]) => { document.getElementById(id).value = v ?? '' })
   document.getElementById('alfa').checked = Boolean(p.alfa)
   document.getElementById('shiny').checked = Boolean(p.shiny)
+  leituras = Array.isArray(p.leituras) ? p.leituras : []
+  mostrarLeituras()
   mostrarJuiz()
   atualizarTotalEV()
   atualizarTotalIV()
@@ -641,7 +727,7 @@ if (idEdicao) iniciarEdicao()
 function limparFormulario() {
   document.querySelectorAll('.formulario-container input, .formulario-container select').forEach(function(campo) {
     // O nick continua: normalmente se cadastra vários Pokémon em sequência
-    if (campo.id === 'treinador' || campo.id === 'pin' || campo.id === 'inicial' || campo.id === 'plataforma' || campo.id === 'tem-juiz') return
+    if (campo.id === 'treinador' || campo.id === 'pin' || campo.id === 'inicial' || campo.id === 'plataforma' || campo.id === 'derrotado-qtd') return
     if (campo.type === 'checkbox' || campo.type === 'radio') {
       campo.checked = false
       return
@@ -666,6 +752,9 @@ function limparFormulario() {
   document.getElementById('preview-especie').hidden = true
   document.querySelector('.total-ev').classList.remove('total-invalido')
   document.querySelectorAll('.faixa-iv').forEach(f => { f.textContent = '' })
+  limparEstrelas()
+  leituras = []
+  mostrarLeituras()
   atualizarTotalEV()
   atualizarTotalIV()
 }

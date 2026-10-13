@@ -299,56 +299,149 @@ main.formulario-container {
   background: #b52a0a;
 }
 
-/* Descobrir IVs pelos stats */
-.descobrir-ivs {
-  margin-bottom: 12px;
-}
-
-.juiz-iv {
+/* ---------- IVs: estrelas do Juiz, botões pequenos e leituras ---------- */
+.estrelas {
   display: none;
-  margin-top: 6px;
-  font-size: 12px;
+  margin-top: 4px;
 }
 
-.com-juiz .juiz-iv {
-  display: block;
+.nintendo .estrelas {
+  display: flex;
+}
+
+.estrelas button {
+  padding: 0 1px;
+  border: none;
+  background: none;
+  font-size: 18px;
+  line-height: 1;
+  color: #d5d8dd;
+  cursor: pointer;
+}
+
+.estrelas button.acesa {
+  color: #f5b301;
 }
 
 .faixa-iv {
   display: block;
   min-height: 16px;
-  margin-top: 4px;
+  margin-top: 2px;
   font-size: 12px;
   font-weight: 600;
   color: #b36b00;
 }
 
-.faixa-iv.exato {
-  color: #1a8f3c;
-}
+.faixa-iv.exato { color: #1a8f3c; }
+.faixa-iv.erro  { color: #cc0000; }
 
-.faixa-iv.erro {
-  color: #cc0000;
-}
-
-.tem-juiz {
-  display: none;
-  align-items: flex-start;
+.acoes-ivs {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 12px;
+}
+
+.btn-pequeno {
+  padding: 6px 14px;
+  border: 2px solid #cc0000;
+  border-radius: 999px;
+  background: white;
+  color: #cc0000;
+  font-family: inherit;
   font-size: 13px;
-  color: #555;
+  font-weight: 700;
   cursor: pointer;
 }
 
-.nintendo .tem-juiz {
+.btn-pequeno:hover:not(:disabled) {
+  background: #cc0000;
+  color: white;
+}
+
+.btn-pequeno:disabled {
+  border-color: #ccc;
+  color: #aaa;
+  cursor: default;
+}
+
+.btn-pequeno.btn-suave {
+  border-color: #d5d8dd;
+  color: #555;
+}
+
+.btn-pequeno.btn-suave:hover {
+  background: #f2f3f5;
+  color: #333;
+}
+
+.leituras {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 12px;
+  color: #777;
+}
+
+.chip-leitura {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px;
+  padding: 1px 4px 1px 8px;
+  border-radius: 999px;
+  background: #eef0f3;
+  color: #333;
+  font-weight: 600;
+}
+
+.chip-leitura button {
+  border: none;
+  background: none;
+  color: #999;
+  cursor: pointer;
+}
+
+/* ---------- Contador de EVs ---------- */
+.contador-evs {
+  margin-bottom: 12px;
+}
+
+.contador-linha {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
-.tem-juiz input {
-  margin-top: 2px;
+.contador-linha #derrotado {
+  flex: 1 1 220px;
 }
 
-.descobrir-ivs .btn-calcular {
-  margin-bottom: 8px;
+.contador-linha #derrotado-qtd {
+  width: 70px;
+}
+
+.dobro {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #555;
+  white-space: nowrap;
+}
+
+.contador-linha input[type="text"],
+.contador-linha input[type="number"] {
+  padding: 8px 10px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 15px;
+  background: white;
+}
+
+.contador-linha input:focus {
+  border-color: #cc0000;
+  outline: none;
 }
