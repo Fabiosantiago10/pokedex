@@ -116,7 +116,7 @@ function preencherStatsCalculados() {
 // ---------- Descobrir IVs (jogos que não mostram os IVs, como os da Nintendo) ----------
 // Testa os 32 valores possíveis de cada IV e fica com os que dão exatamente os stats anotados.
 // Cada leitura de outro nível corta mais valores: com 2 ou 3 níveis, quase sempre sobra um só.
-let leituras = []   // [{ nivel, stats, evs }] guardadas pelo botão "Guardar stats deste nível"
+let leituras = []   // [{ nivel, stats, evs }] que o servidor guardou em cada save deste Pokémon
 
 // Estrelas do Juiz -> faixa de IV
 const FAIXAS_JUIZ = { 1: [0, 10], 2: [11, 20], 3: [21, 29], 4: [30, 30], 5: [31, 31] }
@@ -125,30 +125,14 @@ function statsDoFormulario() {
   return Object.fromEntries(ATRIBUTOS.map(a => [a, valor(a)]))
 }
 
-function guardarLeitura() {
-  const nivel = valor('nivel')
-  const stats = statsDoFormulario()
-  if (nivel < 1 || nivel > 100 || ATRIBUTOS.some(a => !stats[a])) {
-    alert('Preencha o nível e os 6 stats antes de guardar.')
-    return
-  }
-  // Guarda os EVs daquele momento: entre um nível e outro ele pode ter ganhado mais
-  leituras = leituras.filter(l => l.nivel !== nivel).concat({ nivel, stats, evs: lerIvsEvs().evs }).sort((a, b) => a.nivel - b.nivel)
-  mostrarLeituras()
-}
-
-function removerLeitura(nivel) {
-  leituras = leituras.filter(l => l.nivel !== nivel)
-  mostrarLeituras()
-}
-
+// Mostra os níveis que já têm stats salvos (o servidor guarda sozinho a cada save)
 function mostrarLeituras() {
   document.getElementById('leituras').innerHTML = leituras.length
-    ? 'Stats guardados: ' + leituras.map(l =>
-        `<span class="chip-leitura" title="${ATRIBUTOS.map(a => ABREVIACOES[a] + ' ' + l.stats[a]).join(' · ')}">Nv ${l.nivel}
-          <button type="button" onclick="removerLeitura(${l.nivel})" aria-label="Remover">×</button></span>`).join('')
-    : ''
+    ? 'Stats salvos automaticamente: ' + leituras.map(l =>
+        `<span class="chip-leitura" title="${ATRIBUTOS.map(a => ABREVIACOES[a] + ' ' + l.stats[a]).join(' · ')}">Nv ${l.nivel}</span>`).join('')
+    : 'Os stats ficam salvos sozinhos a cada save. Atualize a cada poucos níveis e o cálculo fica mais exato.'
 }
+mostrarLeituras()
 
 function descobrirIvs() {
   const nivel = valor('nivel')
@@ -568,7 +552,6 @@ async function salvarPokemon() {
   const pokemon = {
     treinador: treinador,
     plataforma: document.getElementById('plataforma').value,
-    leituras: leituras,
     numero: document.getElementById('numero').value,
     nome: nome,
     tipo1: document.getElementById('tipo1').value,
@@ -638,6 +621,12 @@ async function salvarPokemon() {
     if (campoInicial.value) document.getElementById('campo-inicial').hidden = true
 
     const salvo = resultado.pokemon
+    // O servidor guardou os stats deste save: atualiza a lista de níveis
+    if (Array.isArray(salvo.leituras)) {
+      leituras = salvo.leituras
+      mostrarLeituras()
+    }
+
     const comp = resultado.comparacao
     const nomeSeguro = escaparHtml(salvo.nome)
     const link = `<a href="index.html?especie=${encodeURIComponent(salvo.nome)}">Ver comparativo completo</a>`

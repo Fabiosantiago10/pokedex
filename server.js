@@ -200,15 +200,6 @@ async function validarPokemon(corpo) {
     stats: { felicidade: numero(corpo.stats && corpo.stats.felicidade) },
     evs: {},
     ivs: {},
-    // Stats anotados em outros níveis: ajudam a descobrir os IVs nos jogos que não os mostram
-    leituras: (Array.isArray(corpo.leituras) ? corpo.leituras : [])
-      .slice(0, 20)
-      .map(l => ({
-        nivel: numero(l && l.nivel),
-        stats: Object.fromEntries(ATRIBUTOS.map(a => [a, numero(l && l.stats && l.stats[a])])),
-        evs: Object.fromEntries(ATRIBUTOS.map(a => [a, Math.min(252, Math.max(0, numero(l && l.evs && l.evs[a])))]))
-      }))
-      .filter(l => l.nivel >= 1 && l.nivel <= 100 && ATRIBUTOS.every(a => l.stats[a] >= 1 && l.stats[a] <= 999)),
     movimentos: (Array.isArray(corpo.movimentos) ? corpo.movimentos : [])
       .slice(0, 4)
       .map(m => ({ nome: texto(m && m.nome), tipo: texto(m && m.tipo, 15) }))
@@ -309,6 +300,27 @@ function adicionarAoHistorico(original, novo) {
   if (!mudou) return historico
   foto.data = original.atualizadoEm || original.criadoEm
   return historico.concat(foto).slice(-MAX_HISTORICO)
+}
+
+// ---------- Leituras de stats ----------
+// A cada save o servidor anota nível, stats e EVs (uma por nível). Com stats de vários níveis,
+// o "Descobrir IVs" fica exato. Só o servidor grava: o navegador não consegue inventar leituras.
+const MAX_LEITURAS = 40
+
+function leituraDe(p) {
+  return {
+    nivel: p.nivel,
+    stats: Object.fromEntries(ATRIBUTOS.map(a => [a, p.stats[a]])),
+    evs: Object.fromEntries(ATRIBUTOS.map(a => [a, p.evs[a] || 0]))
+  }
+}
+
+function comLeitura(lista, p) {
+  return lista
+    .filter(l => l.nivel !== p.nivel)
+    .concat(leituraDe(p))
+    .sort((a, b) => a.nivel - b.nivel)
+    .slice(-MAX_LEITURAS)
 }
 
 // ---------- Regras de edição ----------
@@ -481,6 +493,7 @@ app.post('/api/pokemons', async function(req, res) {
   }
 
   pokemon.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+  pokemon.leituras = comLeitura([], pokemon)
   pokemon.pontuacao = await pontuar(pokemon)
   pokemon.criadoEm = new Date().toISOString()
 
@@ -573,6 +586,10 @@ app.put('/api/pokemons/:id', async function(req, res) {
   pokemon.treinador = original.treinador
   pokemon.criadoEm = original.criadoEm
   pokemon.historico = adicionarAoHistorico(original, pokemon)
+  // Leituras: as antigas + a de agora. Se na janela de correção o nível foi diminuído, o nível antigo estava errado.
+  let anteriores = Array.isArray(original.leituras) && original.leituras.length ? original.leituras : [leituraDe(original)]
+  if (podeCorrigirTudo(original) && pokemon.nivel < original.nivel) anteriores = anteriores.filter(l => l.nivel !== original.nivel)
+  pokemon.leituras = comLeitura(anteriores, pokemon)
   pokemon.atualizadoEm = new Date().toISOString()
   pokemon.pontuacao = await pontuar(pokemon)
 
