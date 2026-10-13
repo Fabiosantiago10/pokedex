@@ -296,3 +296,16 @@ button.link-suave {
 .painel-recuperar .erro-entrar {
   margin: 10px 0 0 0;
 }
+
+.falta-geracao {
+  display: inline-block;
+  margin-right: 10px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fff4e5;
+  border: 1px solid #f5c26b;
+  color: #8a5a00;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}

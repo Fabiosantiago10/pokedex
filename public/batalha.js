@@ -111,10 +111,13 @@ async function atualizar() {
       </div>`
       return
     }
+    const semGeracao = todosPokemons.filter(p => plataformaDe(p) === 'Nintendo' && !p.geracaoJogo).length
     avisoEntreJogos = `<div class="aviso-entre-jogos">
       🔀 <strong>Batalha entre jogos</strong> (${PLATAFORMAS[plataformaDe(a)].curto} x ${PLATAFORMAS[plataformaDe(b)].curto}), com as regras do <strong>PokeMMO</strong>:
       físico ou especial depende de cada ataque. No FireRed seria pelo tipo do ataque, então o resultado lá pode ser outro.
       É uma comparação para diversão: o ranking continua separado por jogo.
+      ${semGeracao ? `<br><small>${semGeracao} Pokémon dos jogos oficiais ficaram de fora porque estão sem a <strong>geração do jogo</strong>.
+        O dono informa em Meus Pokémon → Editar.</small>` : ''}
     </div>`
   }
 
@@ -125,16 +128,21 @@ async function atualizar() {
   const sim = simular(a, melhorA, b, melhorB)
 
   const pct = n => Math.round(n / SIMULACOES * 100)
+  // Nomes de cada lado: com a mesma espécie dos dois lados, diz de qual jogo (ou qual lado) é cada um
+  const mesmaEspecie = a.nome === b.nome
+  const nomeLado = (p, n) => escaparHtml(p.nome) + (!mesmaEspecie ? '' : plataformaDe(a) !== plataformaDe(b) ? ' do ' + PLATAFORMAS[plataformaDe(p)].curto : ' (Pokémon ' + n + ')')
+  const nomeA = nomeLado(a, 1)
+  const nomeB = nomeLado(b, 2)
   const velA = a.stats.velocidade
   const velB = b.stats.velocidade
   const primeiro = velA === velB
     ? `Mesma Velocidade (${velA}): quem ataca primeiro é sorteado a cada turno.`
-    : `<strong>${escaparHtml(velA > velB ? a.nome : b.nome)}</strong> ataca primeiro (Velocidade ${Math.max(velA, velB)} contra ${Math.min(velA, velB)}).`
+    : `<strong>${velA > velB ? nomeA : nomeB}</strong> ataca primeiro (Velocidade ${Math.max(velA, velB)} contra ${Math.min(velA, velB)}).`
 
   let veredito
   if (!melhorA && !melhorB) veredito = 'Nenhum dos dois tem ataque que cause dano: a batalha nunca termina (empate).'
-  else if (pct(sim.a) >= 60) veredito = `<strong>${escaparHtml(a.nome)}</strong> (Pokémon 1) é o favorito.`
-  else if (pct(sim.b) >= 60) veredito = `<strong>${escaparHtml(b.nome)}</strong> (Pokémon 2) é o favorito.`
+  else if (pct(sim.a) >= 60) veredito = `<strong>${nomeA}</strong> é o favorito.`
+  else if (pct(sim.b) >= 60) veredito = `<strong>${nomeB}</strong> é o favorito.`
   else veredito = 'Batalha equilibrada: qualquer um pode ganhar.'
 
   resultado.innerHTML = `
@@ -142,7 +150,7 @@ async function atualizar() {
     <div class="placar">
       <div class="placar-lado ${pct(sim.a) > pct(sim.b) ? 'vencedor' : ''}">
         <span class="placar-pct">${pct(sim.a)}%</span>
-        <span>${escaparHtml(a.nome)} vence</span>
+        <span>${nomeA} vence</span>
       </div>
       <div class="placar-meio">
         <span class="placar-empate">${pct(sim.empate)}% empate</span>
@@ -150,7 +158,7 @@ async function atualizar() {
       </div>
       <div class="placar-lado ${pct(sim.b) > pct(sim.a) ? 'vencedor' : ''}">
         <span class="placar-pct">${pct(sim.b)}%</span>
-        <span>${escaparHtml(b.nome)} vence</span>
+        <span>${nomeB} vence</span>
       </div>
     </div>
     <div class="barra-placar">
