@@ -298,3 +298,35 @@ main.formulario-container {
 .btn-salvar:hover {
   background: #b52a0a;
 }
+
+/* Descobrir IVs pelos stats */
+.descobrir-ivs {
+  margin-bottom: 12px;
+}
+
+.juiz-iv {
+  display: none;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.com-juiz .juiz-iv {
+  display: block;
+}
+
+.faixa-iv {
+  display: block;
+  min-height: 16px;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b36b00;
+}
+
+.faixa-iv.exato {
+  color: #1a8f3c;
+}
+
+.faixa-iv.erro {
+  color: #cc0000;
+}

@@ -87,6 +87,7 @@ function atualizarProjecao() {
   const div = document.getElementById('projecao-stats')
   const botao = document.getElementById('btn-calcular-stats')
   botao.disabled = !baseAtual
+  document.getElementById('btn-descobrir-ivs').disabled = !baseAtual
   if (!baseAtual) {
     div.innerHTML = 'Escolha o Pokémon para ver a projeção dos stats no Lv. 100.'
     return
@@ -109,6 +110,55 @@ function preencherStatsCalculados() {
   const { ivs, evs } = lerIvsEvs()
   const stats = calcularStats(baseAtual, ivs, evs, document.getElementById('natureza').value, nivel)
   ATRIBUTOS.forEach(a => { document.getElementById(a).value = stats[a] })
+}
+
+// Descobre os IVs a partir dos stats (para jogos que não mostram os IVs, como os da Nintendo).
+// Testa os 32 valores possíveis de cada IV e fica com os que dão exatamente o stat informado.
+function descobrirIvs() {
+  const nivel = valor('nivel')
+  if (!baseAtual) return
+  if (nivel < 1 || nivel > 100) {
+    alert('Preencha o Nível Atual (1 a 100) primeiro.')
+    return
+  }
+  const natureza = document.getElementById('natureza').value
+  const { evs } = lerIvsEvs()
+  ATRIBUTOS.forEach(function(a) {
+    const s = SUFIXOS[a]
+    const faixa = document.getElementById('faixa' + s)
+    const stat = document.getElementById(a).value.trim()
+    const juiz = document.getElementById('juiz' + s).value
+    let possiveis = Array.from({ length: 32 }, (_, iv) => iv)
+    if (stat) {
+      const alvo = valor(a)
+      possiveis = possiveis.filter(iv => calcularStats(baseAtual, { [a]: iv }, { [a]: evs[a] }, natureza, nivel)[a] === alvo)
+    }
+    if (juiz) {
+      const [min, max] = juiz.split('-').map(Number)
+      possiveis = possiveis.filter(iv => iv >= min && iv <= max)
+    }
+    faixa.className = 'faixa-iv'
+    if (!stat && !juiz) {
+      faixa.textContent = 'Preencha o stat ou o Juiz'
+      return
+    }
+    if (possiveis.length === 0) {
+      faixa.textContent = 'Nenhum IV bate: confira stat, nível, natureza e EVs'
+      faixa.classList.add('erro')
+      return
+    }
+    const min = possiveis[0]
+    const max = possiveis[possiveis.length - 1]
+    // Com mais de um valor possível, fica com o do meio (a faixa aparece embaixo)
+    document.getElementById('iv' + s).value = possiveis[Math.floor((possiveis.length - 1) / 2)]
+    if (min === max) {
+      faixa.textContent = '✔ IV exato: ' + min
+      faixa.classList.add('exato')
+    } else {
+      faixa.textContent = `Entre ${min} e ${max}`
+    }
+  })
+  atualizarTotalIV()
 }
 
 // Atualiza o total de EVs em tempo real
@@ -135,8 +185,15 @@ let infoNick = null  // { temPin, temInicial } do treinador logado
 
 // O jogo fica escolhido para os próximos cadastros
 const campoPlataforma = document.getElementById('plataforma')
+function mostrarJuiz() {
+  document.getElementById('secao-ivs').classList.toggle('com-juiz', campoPlataforma.value === 'Nintendo')
+}
 campoPlataforma.value = plataformaSalva()
-campoPlataforma.addEventListener('change', () => salvarPlataforma(campoPlataforma.value))
+mostrarJuiz()
+campoPlataforma.addEventListener('change', function() {
+  salvarPlataforma(campoPlataforma.value)
+  mostrarJuiz()
+})
 
 if (sessaoAtual) {
   campoTreinador.value = sessaoAtual.nick
@@ -527,6 +584,7 @@ function preencherFormulario(p) {
   Object.entries(campos).forEach(([id, v]) => { document.getElementById(id).value = v ?? '' })
   document.getElementById('alfa').checked = Boolean(p.alfa)
   document.getElementById('shiny').checked = Boolean(p.shiny)
+  mostrarJuiz()
   atualizarTotalEV()
   atualizarTotalIV()
 }
@@ -600,6 +658,7 @@ function limparFormulario() {
   statusEspecie.classList.remove('status-erro')
   document.getElementById('preview-especie').hidden = true
   document.querySelector('.total-ev').classList.remove('total-invalido')
+  document.querySelectorAll('.faixa-iv').forEach(f => { f.textContent = '' })
   atualizarTotalEV()
   atualizarTotalIV()
 }

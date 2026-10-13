@@ -276,32 +276,102 @@
     </div>
 
     <!-- SEÇÃO 4: IVs -->
-    <div class="secao-form">
+    <div class="secao-form" id="secao-ivs">
       <h3>IVs <span class="total-iv">Total: <span id="total-iv">0</span>/186</span></h3>
+      <div class="descobrir-ivs">
+        <button type="button" id="btn-descobrir-ivs" class="btn-calcular" onclick="descobrirIvs()" disabled>
+          🧮 Descobrir IVs pelos stats
+        </button>
+        <p class="dica-ataques">
+          O jogo não mostra os IVs? Preencha os <strong>stats</strong> do resumo, o <strong>nível</strong>, a <strong>natureza</strong> e os <strong>EVs</strong>
+          (0 se ele nunca foi treinado) e clique no botão: o site faz a conta ao contrário.
+          Nos jogos da Nintendo, o <strong>Juiz</strong> (Judge) da caixa do PC ajuda a acertar o valor.
+        </p>
+      </div>
       <div class="campos">
         <div class="campo">
           <label>IV HP</label>
           <input type="number" id="ivHp" min="0" max="31" oninput="atualizarTotalIV()">
+          <select id="juizHp" class="juiz-iv" title="O que o Juiz do jogo diz sobre este stat">
+            <option value="">Juiz: não sei</option>
+            <option value="31-31">Best (31)</option>
+            <option value="30-30">Fantastic (30)</option>
+            <option value="21-29">Very Good (21–29)</option>
+            <option value="11-20">Pretty Good (11–20)</option>
+            <option value="1-10">Decent (1–10)</option>
+            <option value="0-0">No Good (0)</option>
+          </select>
+          <small id="faixaHp" class="faixa-iv"></small>
         </div>
         <div class="campo">
           <label>IV Ataque</label>
           <input type="number" id="ivAtaque" min="0" max="31" oninput="atualizarTotalIV()">
+          <select id="juizAtaque" class="juiz-iv" title="O que o Juiz do jogo diz sobre este stat">
+            <option value="">Juiz: não sei</option>
+            <option value="31-31">Best (31)</option>
+            <option value="30-30">Fantastic (30)</option>
+            <option value="21-29">Very Good (21–29)</option>
+            <option value="11-20">Pretty Good (11–20)</option>
+            <option value="1-10">Decent (1–10)</option>
+            <option value="0-0">No Good (0)</option>
+          </select>
+          <small id="faixaAtaque" class="faixa-iv"></small>
         </div>
         <div class="campo">
           <label>IV Defesa</label>
           <input type="number" id="ivDefesa" min="0" max="31" oninput="atualizarTotalIV()">
+          <select id="juizDefesa" class="juiz-iv" title="O que o Juiz do jogo diz sobre este stat">
+            <option value="">Juiz: não sei</option>
+            <option value="31-31">Best (31)</option>
+            <option value="30-30">Fantastic (30)</option>
+            <option value="21-29">Very Good (21–29)</option>
+            <option value="11-20">Pretty Good (11–20)</option>
+            <option value="1-10">Decent (1–10)</option>
+            <option value="0-0">No Good (0)</option>
+          </select>
+          <small id="faixaDefesa" class="faixa-iv"></small>
         </div>
         <div class="campo">
           <label>IV Atq. Esp</label>
           <input type="number" id="ivAtqEsp" min="0" max="31" oninput="atualizarTotalIV()">
+          <select id="juizAtqEsp" class="juiz-iv" title="O que o Juiz do jogo diz sobre este stat">
+            <option value="">Juiz: não sei</option>
+            <option value="31-31">Best (31)</option>
+            <option value="30-30">Fantastic (30)</option>
+            <option value="21-29">Very Good (21–29)</option>
+            <option value="11-20">Pretty Good (11–20)</option>
+            <option value="1-10">Decent (1–10)</option>
+            <option value="0-0">No Good (0)</option>
+          </select>
+          <small id="faixaAtqEsp" class="faixa-iv"></small>
         </div>
         <div class="campo">
           <label>IV Def. Esp</label>
           <input type="number" id="ivDefEsp" min="0" max="31" oninput="atualizarTotalIV()">
+          <select id="juizDefEsp" class="juiz-iv" title="O que o Juiz do jogo diz sobre este stat">
+            <option value="">Juiz: não sei</option>
+            <option value="31-31">Best (31)</option>
+            <option value="30-30">Fantastic (30)</option>
+            <option value="21-29">Very Good (21–29)</option>
+            <option value="11-20">Pretty Good (11–20)</option>
+            <option value="1-10">Decent (1–10)</option>
+            <option value="0-0">No Good (0)</option>
+          </select>
+          <small id="faixaDefEsp" class="faixa-iv"></small>
         </div>
         <div class="campo">
           <label>IV Velocidade</label>
           <input type="number" id="ivVelocidade" min="0" max="31" oninput="atualizarTotalIV()">
+          <select id="juizVelocidade" class="juiz-iv" title="O que o Juiz do jogo diz sobre este stat">
+            <option value="">Juiz: não sei</option>
+            <option value="31-31">Best (31)</option>
+            <option value="30-30">Fantastic (30)</option>
+            <option value="21-29">Very Good (21–29)</option>
+            <option value="11-20">Pretty Good (11–20)</option>
+            <option value="1-10">Decent (1–10)</option>
+            <option value="0-0">No Good (0)</option>
+          </select>
+          <small id="faixaVelocidade" class="faixa-iv"></small>
         </div>
       </div>
     </div>
