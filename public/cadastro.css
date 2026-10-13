@@ -408,3 +408,30 @@ main.formulario-container {
   font-size: 12px;
   color: #777;
 }
+
+/* Regras de edição */
+.aviso-edicao {
+  margin: 0 0 16px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fff8e6;
+  border: 1px solid #f5d26b;
+  font-size: 14px;
+}
+
+.aviso-edicao ul {
+  margin: 6px 0 0 0;
+  padding-left: 4px;
+  list-style: none;
+}
+
+.aviso-edicao li {
+  margin: 3px 0;
+}
+
+.formulario-container select:disabled,
+.formulario-container input:disabled {
+  background: #f2f3f5;
+  color: #888;
+  cursor: not-allowed;
+}

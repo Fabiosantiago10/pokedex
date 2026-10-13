@@ -311,6 +311,72 @@ function adicionarAoHistorico(original, novo) {
   return historico.concat(foto).slice(-MAX_HISTORICO)
 }
 
+// ---------- Regras de edição ----------
+// Nas primeiras 24 horas dá para corrigir tudo (erro de digitação no cadastro).
+// Depois, só vale o que é possível no jogo: subir de nível, evoluir, ganhar EVs, trocar ataques.
+const HORAS_PARA_CORRIGIR = 24
+
+function podeCorrigirTudo(original) {
+  return Date.now() - new Date(original.criadoEm).getTime() < HORAS_PARA_CORRIGIR * 3600 * 1000
+}
+
+async function validarEdicao(original, novo) {
+  if (podeCorrigirTudo(original)) return []
+  const erros = []
+  const plataforma = plataformaDe(original)
+
+  if (novo.plataforma !== plataforma) erros.push('O jogo não pode mudar depois do cadastro')
+  if (novo.nivel < original.nivel) erros.push(`O nível não pode diminuir (estava no Nv ${original.nivel})`)
+  if (novo.natureza !== original.natureza) erros.push(`A natureza não muda no jogo (é ${original.natureza || 'neutra'})`)
+  if (novo.sexo !== (original.sexo || '')) erros.push('O sexo não muda no jogo')
+  if (novo.shiny !== Boolean(original.shiny)) erros.push('Shiny não muda no jogo')
+  if (novo.alfa !== Boolean(original.alfa)) erros.push('Alfa não muda no jogo')
+
+  // Espécie: a mesma ou uma evolução dela
+  const evoluiu = novo.nome.toLowerCase() !== original.nome.toLowerCase()
+  if (evoluiu) {
+    let ok = null
+    try { ok = await pokeapi.evoluiPara(original.nome, novo.nome) } catch (e) { ok = null }
+    if (ok === false) erros.push(`${original.nome} não evolui para ${novo.nome}`)
+    if (ok === null) erros.push('Não foi possível conferir a evolução agora. Tente de novo em alguns minutos.')
+  }
+
+  // Stats não caem com nível nem com evolução; só se os EVs daquele stat diminuíram (frutas, reset de EVs)
+  if (!evoluiu) {
+    ATRIBUTOS.forEach(function(a) {
+      const evCaiu = (novo.evs[a] || 0) < (original.evs[a] || 0)
+      if (!evCaiu && novo.stats[a] < original.stats[a]) {
+        erros.push(`${NOMES_ATRIBUTOS[a]} não pode cair de ${original.stats[a]} para ${novo.stats[a]} sem diminuir os EVs`)
+      }
+    })
+  }
+
+  // IVs: no PokeMMO o jogo mostra o valor exato, então não mudam.
+  // Nos outros jogos podem ir para 31 a partir do Nv 50 (Hyper Training / Bottle Cap) ou ser corrigidos,
+  // desde que o novo IV feche a conta com os stats de todos os saves anteriores.
+  const ivsMudaram = ATRIBUTOS.filter(a => novo.ivs[a] !== original.ivs[a])
+  if (ivsMudaram.length && plataforma === 'PokeMMO') {
+    erros.push('No PokeMMO os IVs aparecem no jogo e não mudam: ' + ivsMudaram.map(a => NOMES_ATRIBUTOS[a]).join(', '))
+  } else if (ivsMudaram.length) {
+    const versoes = [...(original.historico || []), original, novo]
+    for (const a of ivsMudaram.filter(a => !(novo.ivs[a] === 31 && novo.nivel >= 50))) {
+      for (const v of versoes) {
+        const base = await statsBase(v.nome)
+        if (!base) continue
+        let fecha = false
+        for (let ev = 0; ev <= 252 && !fecha; ev++) {
+          fecha = calcularStats(base, { [a]: novo.ivs[a] }, { [a]: ev }, novo.natureza, v.nivel)[a] === v.stats[a]
+        }
+        if (!fecha) {
+          erros.push(`IV ${novo.ivs[a]} de ${NOMES_ATRIBUTOS[a]} não bate com o save do Nv ${v.nivel} (${NOMES_ATRIBUTOS[a]} ${v.stats[a]}). Use o 🧮 Descobrir IVs.`)
+          break
+        }
+      }
+    }
+  }
+  return erros
+}
+
 // ---------- Rotas ----------
 app.get('/api/status', function(req, res) {
   res.json({ mensagem: 'Servidor da Pokédex funcionando!', total: pokemons.length })
@@ -492,6 +558,9 @@ app.put('/api/pokemons/:id', async function(req, res) {
   }
   const auth = await autenticar(original.treinador, req.body.pin, req.body.inicial)
   if (!auth.ok) return res.status(auth.status).json({ erros: [auth.erro] })
+
+  const errosEdicao = await validarEdicao(original, pokemon)
+  if (errosEdicao.length > 0) return res.status(400).json({ erros: errosEdicao })
 
   if (encontrarRepetido(pokemon, original.id)) {
     return res.status(409).json({

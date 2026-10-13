@@ -151,4 +151,28 @@ async function dadosDoPokemon(nome) {
   return resultado
 }
 
-module.exports = { listarEspecies, dadosDoPokemon }
+// A espécie "para" é uma evolução (direta ou não) da espécie "de"? Ex: Charmander -> Charizard = sim.
+// Usa a cadeia de evolução da PokéAPI; null quando não dá para consultar.
+async function evoluiPara(de, para) {
+  const slugDe = paraSlug(de)
+  const slugPara = paraSlug(para)
+  if (!cache.cadeias) cache.cadeias = {}
+  if (!(slugDe in cache.cadeias)) {
+    const especie = await buscarJson(`${API}/pokemon-species/${slugDe}`)
+    if (!especie || !especie.evolution_chain) return null
+    const cadeia = await buscarJson(especie.evolution_chain.url)
+    if (!cadeia) return null
+    // Guarda, para cada espécie da cadeia, todas as espécies que vêm depois dela
+    const visitar = function(no) {
+      const depois = []
+      no.evolves_to.forEach(filho => { depois.push(filho.species.name, ...visitar(filho)) })
+      cache.cadeias[no.species.name] = depois
+      return depois
+    }
+    visitar(cadeia.chain)
+    salvarCache()
+  }
+  return (cache.cadeias[slugDe] || []).includes(slugPara)
+}
+
+module.exports = { listarEspecies, dadosDoPokemon, evoluiPara }

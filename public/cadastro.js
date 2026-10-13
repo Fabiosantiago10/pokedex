@@ -713,10 +713,39 @@ function preencherFormulario(p) {
   atualizarTotalIV()
 }
 
+// Depois de 24 horas do cadastro, só vale o que é possível no jogo (o servidor confere de novo ao salvar)
+const HORAS_PARA_CORRIGIR = 24
+
+function aplicarTravas(p) {
+  const limite = new Date(new Date(p.criadoEm).getTime() + HORAS_PARA_CORRIGIR * 3600 * 1000)
+  const aviso = document.createElement('div')
+  aviso.className = 'aviso-edicao'
+  if (Date.now() < limite.getTime()) {
+    aviso.innerHTML = `✏️ Até <strong>${limite.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</strong>
+      você pode corrigir qualquer dado (erro de digitação). Depois disso, só o que muda no jogo: nível, evolução, EVs, stats e ataques.`
+  } else {
+    ;['plataforma', 'natureza', 'sexo', 'alfa', 'shiny'].forEach(id => { document.getElementById(id).disabled = true })
+    document.getElementById('nivel').min = p.nivel
+    const pokemmo = plataformaDe(p) === 'PokeMMO'
+    if (pokemmo) {
+      ATRIBUTOS.forEach(a => { document.getElementById('iv' + SUFIXOS[a]).disabled = true })
+      document.getElementById('btn-descobrir-ivs').hidden = true
+    }
+    aviso.innerHTML = `🔒 Para manter a base confiável, depois do cadastro só muda o que muda no jogo:
+      <ul>
+        <li>✅ Pode: subir de nível, evoluir (${escaparHtml(p.nome)} → evolução dele), EVs, stats, ataques, habilidade e apelido.</li>
+        <li>🚫 Não pode: trocar o jogo, a natureza, o sexo, Shiny/Alfa, voltar de nível ou virar outra espécie.</li>
+        <li>${pokemmo ? '🚫 IVs: no PokeMMO o jogo mostra o valor exato, então não mudam.'
+          : '⚠️ IVs: só podem ser corrigidos se baterem com os stats dos saves anteriores (ou ir para 31 com Hyper Training, a partir do Nv 50).'}</li>
+      </ul>`
+  }
+  document.querySelector('.subtitulo').after(aviso)
+}
+
 async function iniciarEdicao() {
   document.querySelector('.formulario-container h2').textContent = 'Editar Pokémon'
   document.querySelector('.subtitulo').textContent =
-    'Corrija os dados e salve. A posição no ranking é recalculada.'
+    'Atualize o que mudou no jogo e salve. A versão anterior fica no histórico.'
   const botao = document.querySelector('.btn-salvar')
   botao.textContent = 'Salvar alterações'
   // Editando não é "Cadastrar": nenhuma das abas fica marcada
@@ -735,6 +764,7 @@ async function iniciarEdicao() {
     const pokemon = (await resposta.json()).pokemons.find(p => p.id === idEdicao)
     if (!pokemon) throw new Error('não é deste treinador')
     preencherFormulario(pokemon)
+    aplicarTravas(pokemon)
     campoPin.value = sessao.pin
     // Carrega habilidades e ataques da espécie para o autocompletar
     carregarEspecie(pokemon.nome)
