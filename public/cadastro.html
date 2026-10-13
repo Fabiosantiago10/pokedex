@@ -247,41 +247,43 @@
     <!-- SEÇÃO 3: EVs -->
     <div class="secao-form">
       <h3>EVs <span class="total-ev">Total: <span id="total-ev">0</span>/510</span></h3>
-      <div class="contador-evs">
-        <div class="contador-linha">
-          <input type="text" id="derrotado" list="lista-especies" placeholder="Pokémon que você derrotou (ex: Pidgey)" autocomplete="off">
-          <input type="number" id="derrotado-qtd" min="1" max="999" value="1" title="Quantos você derrotou">
-          <label class="dobro" title="Pokérus ou Macho Brace dobram os EVs ganhos"><input type="checkbox" id="derrotado-dobro"> ×2</label>
-          <button type="button" class="btn-pequeno" onclick="contarEvs()">⚔️ Somar EVs</button>
-        </div>
-        <small id="status-evs" class="status-pin">Os jogos antigos não mostram os EVs: anote quem você derrotou e o site soma nos campos abaixo.</small>
-      </div>
       <div class="campos">
         <div class="campo">
           <label>EV HP</label>
           <input type="number" id="evHp" min="0" max="252" oninput="atualizarTotalEV()">
+          <small id="faixaEvHp" class="faixa-iv"></small>
         </div>
         <div class="campo">
           <label>EV Ataque</label>
           <input type="number" id="evAtaque" min="0" max="252" oninput="atualizarTotalEV()">
+          <small id="faixaEvAtaque" class="faixa-iv"></small>
         </div>
         <div class="campo">
           <label>EV Defesa</label>
           <input type="number" id="evDefesa" min="0" max="252" oninput="atualizarTotalEV()">
+          <small id="faixaEvDefesa" class="faixa-iv"></small>
         </div>
         <div class="campo">
           <label>EV Atq. Esp</label>
           <input type="number" id="evAtqEsp" min="0" max="252" oninput="atualizarTotalEV()">
+          <small id="faixaEvAtqEsp" class="faixa-iv"></small>
         </div>
         <div class="campo">
           <label>EV Def. Esp</label>
           <input type="number" id="evDefEsp" min="0" max="252" oninput="atualizarTotalEV()">
+          <small id="faixaEvDefEsp" class="faixa-iv"></small>
         </div>
         <div class="campo">
           <label>EV Velocidade</label>
           <input type="number" id="evVelocidade" min="0" max="252" oninput="atualizarTotalEV()">
+          <small id="faixaEvVelocidade" class="faixa-iv"></small>
         </div>
       </div>
+      <div class="acoes-ivs">
+        <button type="button" id="btn-descobrir-evs" class="btn-pequeno" onclick="descobrirEvs()" disabled
+          title="Com os IVs já descobertos, calcula quantos EVs ele tem pelos stats de agora">🧮 Descobrir EVs</button>
+      </div>
+      <p class="dica-centro">Descubra os IVs primeiro (embaixo). Depois este botão calcula os EVs pelos stats.</p>
     </div>
 
     <!-- SEÇÃO 4: IVs -->

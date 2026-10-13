@@ -88,6 +88,7 @@ function atualizarProjecao() {
   const botao = document.getElementById('btn-calcular-stats')
   botao.disabled = !baseAtual
   document.getElementById('btn-descobrir-ivs').disabled = !baseAtual
+  document.getElementById('btn-descobrir-evs').disabled = !baseAtual
   if (!baseAtual) {
     div.innerHTML = 'Escolha o Pokémon para ver a projeção dos stats no Lv. 100.'
     return
@@ -206,46 +207,76 @@ function limparEstrelas() {
   })
 }
 
-// ---------- Contador de EVs ----------
-// Cada Pokémon derrotado dá EVs num stat (ex: Pidgey = 1 de Velocidade). Soma nos campos de EV.
-async function contarEvs() {
-  const nome = document.getElementById('derrotado').value.trim()
-  const qtd = Math.max(1, valor('derrotado-qtd'))
-  const status = document.getElementById('status-evs')
-  if (!nome) return
-  status.textContent = 'Buscando ' + nome + '...'
-  try {
-    const resposta = await fetch('/api/especies/' + encodeURIComponent(nome))
-    if (resposta.status === 404) {
-      status.textContent = `"${nome}" não é um Pokémon.`
+// ---------- Descobrir EVs ----------
+// Os IVs nunca mudam e os EVs só aumentam. As leituras antigas (quase sem EVs) dizem quais IVs são possíveis;
+// os stats de agora dizem quais pares IV + EV fecham a conta. Testa todos os pares, sem chutar o IV do meio.
+// Cada 4 EVs valem 1 ponto no Nv 100 (menos em nível baixo), então o resultado é uma faixa.
+function descobrirEvs() {
+  const nivel = valor('nivel')
+  if (!baseAtual) return
+  if (nivel < 1 || nivel > 100) {
+    alert('Preencha o Nível Atual (1 a 100) primeiro.')
+    return
+  }
+  const anteriores = leituras.filter(l => l.nivel < nivel)
+  const semIvs = ATRIBUTOS.some(a => document.getElementById('iv' + SUFIXOS[a]).value.trim() === '')
+  if (anteriores.length === 0 && semIvs) {
+    alert('Descubra ou preencha os IVs primeiro: o cálculo dos EVs depende deles.')
+    return
+  }
+  const natureza = document.getElementById('natureza').value
+  const { ivs } = lerIvsEvs()
+  const stat = (a, iv, ev, nv) => calcularStats(baseAtual, { [a]: iv }, { [a]: ev }, natureza, nv)[a]
+
+  ATRIBUTOS.forEach(function(a) {
+    const s = SUFIXOS[a]
+    const faixa = document.getElementById('faixaEv' + s)
+    faixa.className = 'faixa-iv'
+    const atual = valor(a)
+    if (!atual) {
+      faixa.textContent = ''
       return
     }
-    const dados = await resposta.json()
-    const fator = qtd * (document.getElementById('derrotado-dobro').checked ? 2 : 1)
-    const ganhos = []
-    let total = ATRIBUTOS.reduce((t, a) => t + valor('ev' + SUFIXOS[a]), 0)
-    ATRIBUTOS.forEach(function(a) {
-      const rende = (dados.rendeEvs && dados.rendeEvs[a]) || 0
-      if (!rende) return
-      const campo = document.getElementById('ev' + SUFIXOS[a])
-      // Respeita os limites: 252 por stat e 510 no total
-      const soma = Math.min(rende * fator, 252 - valor('ev' + SUFIXOS[a]), 510 - total)
-      if (soma <= 0) return
-      campo.value = valor('ev' + SUFIXOS[a]) + soma
-      total += soma
-      ganhos.push(`+${soma} ${NOMES_ATRIBUTOS[a]}`)
+    // IVs possíveis: pelas leituras antigas (e estrelas do Juiz) ou, sem leituras, o IV do formulário
+    let ivsPossiveis = [ivs[a]]
+    if (anteriores.length) {
+      ivsPossiveis = Array.from({ length: 32 }, (_, iv) => iv)
+        .filter(iv => anteriores.every(l => stat(a, iv, (l.evs || {})[a] || 0, l.nivel) === l.stats[a]))
+      const estrelas = Number(document.getElementById('juiz' + s).dataset.valor)
+      if (estrelas) ivsPossiveis = ivsPossiveis.filter(iv => iv >= FAIXAS_JUIZ[estrelas][0] && iv <= FAIXAS_JUIZ[estrelas][1])
+    }
+    // EVs nunca diminuem: começa do que ele já tinha na última leitura
+    const evMinimo = Math.max(0, ...anteriores.map(l => (l.evs || {})[a] || 0))
+    const pares = []
+    ivsPossiveis.forEach(function(iv) {
+      for (let ev = evMinimo; ev <= 252; ev++) if (stat(a, iv, ev, nivel) === atual) pares.push({ iv, ev })
     })
-    atualizarTotalEV()
-    atualizarProjecao()
-    status.textContent = ganhos.length
-      ? `✔ ${dados.nome} ×${qtd}: ${ganhos.join(', ')}`
-      : `${dados.nome} não somou nada (limite de EVs atingido).`
-    document.getElementById('derrotado').value = ''
-    document.getElementById('derrotado-qtd').value = 1
-  } catch (erro) {
-    status.textContent = 'Não foi possível buscar agora. Tente de novo.'
-    console.error(erro)
-  }
+    if (pares.length === 0) {
+      faixa.textContent = 'Não bate: confira os dados'
+      faixa.classList.add('erro')
+      return
+    }
+    const evs = pares.map(p => p.ev)
+    const ivsOk = [...new Set(pares.map(p => p.iv))]
+    const evMin = Math.min(...evs)
+    const evMax = Math.max(...evs)
+    // EV: fica com o menor valor possível, que é o que se tem certeza
+    document.getElementById('ev' + s).value = evMin
+    faixa.textContent = evMin === evMax ? '✔ exato' : `${evMin} a ${evMax}`
+    if (evMin === evMax) faixa.classList.add('exato')
+    // Os stats de agora também estreitam os IVs
+    if (anteriores.length) {
+      const faixaIv = document.getElementById('faixa' + s)
+      const ivMin = Math.min(...ivsOk)
+      const ivMax = Math.max(...ivsOk)
+      document.getElementById('iv' + s).value = ivsOk[Math.floor((ivsOk.length - 1) / 2)]
+      faixaIv.className = 'faixa-iv' + (ivMin === ivMax ? ' exato' : '')
+      faixaIv.textContent = ivMin === ivMax ? '✔ exato' : `${ivMin} a ${ivMax}`
+    }
+  })
+  atualizarTotalEV()
+  atualizarTotalIV()
+  atualizarProjecao()
 }
 
 // Atualiza o total de EVs em tempo real
@@ -727,7 +758,7 @@ if (idEdicao) iniciarEdicao()
 function limparFormulario() {
   document.querySelectorAll('.formulario-container input, .formulario-container select').forEach(function(campo) {
     // O nick continua: normalmente se cadastra vários Pokémon em sequência
-    if (campo.id === 'treinador' || campo.id === 'pin' || campo.id === 'inicial' || campo.id === 'plataforma' || campo.id === 'derrotado-qtd') return
+    if (campo.id === 'treinador' || campo.id === 'pin' || campo.id === 'inicial' || campo.id === 'plataforma') return
     if (campo.type === 'checkbox' || campo.type === 'radio') {
       campo.checked = false
       return

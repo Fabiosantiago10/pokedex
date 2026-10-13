@@ -402,46 +402,9 @@ main.formulario-container {
   cursor: pointer;
 }
 
-/* ---------- Contador de EVs ---------- */
-.contador-evs {
-  margin-bottom: 12px;
-}
-
-.contador-linha {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.contador-linha #derrotado {
-  flex: 1 1 220px;
-}
-
-.contador-linha #derrotado-qtd {
-  width: 70px;
-}
-
-.dobro {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  color: #555;
-  white-space: nowrap;
-}
-
-.contador-linha input[type="text"],
-.contador-linha input[type="number"] {
-  padding: 8px 10px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 15px;
-  background: white;
-}
-
-.contador-linha input:focus {
-  border-color: #cc0000;
-  outline: none;
+.dica-centro {
+  margin: 6px 0 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: #777;
 }
