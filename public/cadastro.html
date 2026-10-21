@@ -331,9 +331,9 @@
       </div>
       <div class="acoes-ivs">
         <button type="button" id="btn-descobrir-evs" class="btn-pequeno" onclick="descobrirEvs()" disabled
-          title="Com os IVs já descobertos, calcula quantos EVs ele tem pelos stats de agora">🧮 Descobrir EVs</button>
+          title="Calcula IVs e EVs juntos, pelos stats de todos os saves">🧮 Descobrir IVs e EVs</button>
       </div>
-      <p class="dica-centro">Descubra os IVs primeiro (embaixo). Depois este botão calcula os EVs pelos stats.</p>
+      <p class="dica-centro">No emulador, IVs e EVs são calculados sozinhos ao salvar. O botão mostra antes.</p>
     </div>
 
     <!-- SEÇÃO 4: IVs -->
@@ -391,7 +391,12 @@
       </div>
       <div class="acoes-ivs">
         <button type="button" id="btn-descobrir-ivs" class="btn-pequeno" onclick="descobrirIvs()" disabled
-          title="Calcula os IVs pelos stats, nível, natureza e EVs (para jogos que não mostram os IVs)">🧮 Descobrir IVs</button>
+          title="Calcula IVs e EVs juntos, pelos stats de todos os saves">🧮 Descobrir IVs e EVs</button>
+      </div>
+      <div class="opcoes-estimativa">
+        <label id="op-recem"><input type="checkbox" id="recem-capturado"> 🆕 Acabei de capturar (ainda não batalhou)</label>
+        <label id="op-sem-batalha" hidden><input type="checkbox" id="sem-batalha"> 🍬 Desde o último save ele não batalhou (subiu com Rare Candy)</label>
+        <small>Essas marcações deixam o cálculo bem mais exato: sem batalha, os EVs não mudam.</small>
       </div>
       <div id="leituras" class="leituras"></div>
     </div>

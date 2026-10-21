@@ -451,3 +451,30 @@ main.formulario-container {
 .geracao-detectada.erro-geracao {
   color: #b00000;
 }
+
+/* Opções que deixam o cálculo de IVs e EVs mais exato (só emulador) */
+.opcoes-estimativa {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #444;
+}
+
+.nintendo .opcoes-estimativa {
+  display: flex;
+}
+
+.opcoes-estimativa label {
+  cursor: pointer;
+}
+
+.opcoes-estimativa label[hidden] {
+  display: none;
+}
+
+.opcoes-estimativa small {
+  color: #777;
+}

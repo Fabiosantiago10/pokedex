@@ -109,6 +109,86 @@ function baseDoPokemon(p, dados) {
   return baseNaGeracao(dados, plataformaDe(p) === 'Nintendo' ? Number(p.geracaoJogo) || null : null)
 }
 
+// ---------- Estimar IVs e EVs pelos saves ----------
+// Usa só o que o jogo mostra (nível e stats) em cada save, sem confiar nos EVs digitados.
+// Regras do jogo: o IV de cada stat nunca muda e os EVs só aumentam (ou ficam iguais) com o tempo.
+// Para cada IV de 0 a 31, procura uma sequência de EVs que nunca diminui e fecha os stats de todos os saves.
+// Cada 4 EVs valem 1 ponto na conta, então os EVs saem em faixas de 4 em 4.
+//   versoes: [{ nivel, stats, base }] do mais antigo para o mais novo (base = status base da espécie naquele save)
+//   recemCapturado: no primeiro save ele ainda não tinha batalhado (0 EVs), o que deixa tudo mais exato
+//   v.semBatalha: entre o save anterior e este ele não batalhou (ex: subiu com Rare Candy), então os EVs são os mesmos
+// Devolve { ivs: { hp: [min, max] }, evs: { hp: [min, max] }, pares: { hp: { iv: [EVs/4 possíveis agora] } }, saves }
+// (null no stat que não fecha). Os pares servem para escolher um IV + EV que dê exatamente o stat de agora.
+function estimarIvsEvs(versoes, natureza, recemCapturado) {
+  const resultado = { ivs: {}, evs: {}, pares: {}, saves: versoes.length }
+  ATRIBUTOS.forEach(function(a) {
+    resultado.ivs[a] = null
+    resultado.evs[a] = null
+    resultado.pares[a] = null
+    // Se algum save antigo tiver erro de digitação, tenta de novo sem ele (do mais antigo para o mais novo)
+    for (let inicio = 0; inicio < versoes.length; inicio++) {
+      const lista = versoes.slice(inicio).filter(v => v.base && v.stats && v.stats[a])
+      if (!lista.length) continue
+      const zerado = recemCapturado && inicio === 0
+      const ivsOk = []
+      const pontosNoFim = new Set()
+      const pares = {}
+      for (let iv = 0; iv <= 31; iv++) {
+        let anterior = 0
+        let fecha = true
+        lista.forEach(function(v, i) {
+          if (!fecha) return
+          const possiveis = []
+          const maximo = i === 0 && zerado ? 0 : (i > 0 && v.semBatalha ? anterior : 63)
+          for (let pontos = anterior; pontos <= maximo; pontos++) {
+            if (calcularStats(v.base, { [a]: iv }, { [a]: pontos * 4 }, natureza, v.nivel)[a] === v.stats[a]) possiveis.push(pontos)
+          }
+          if (!possiveis.length) {
+            fecha = false
+            return
+          }
+          if (i === lista.length - 1) {
+            possiveis.forEach(p => pontosNoFim.add(p))
+            pares[iv] = possiveis
+          }
+          anterior = possiveis[0]  // o menor possível deixa mais espaço para os saves seguintes
+        })
+        if (fecha) ivsOk.push(iv)
+      }
+      if (ivsOk.length) {
+        const pontos = [...pontosNoFim]
+        resultado.ivs[a] = [Math.min(...ivsOk), Math.max(...ivsOk)]
+        resultado.evs[a] = [Math.min(...pontos) * 4, Math.min(252, Math.max(...pontos) * 4 + 3)]
+        resultado.pares[a] = pares
+        break
+      }
+    }
+  })
+  return resultado
+}
+
+// IV + EV que fecham o stat de agora: mantém o que foi digitado se já fecha; senão, o mais perto disso
+// (o IV do meio da faixa, quando não foi digitado nada) e o menor EV possível para esse IV.
+function escolherIvEv(estimativa, a, ivDigitado, evDigitado, vazio) {
+  const pares = estimativa.pares[a]
+  if (!pares) return null
+  const ivs = Object.keys(pares).map(Number)
+  const alvo = vazio ? (estimativa.ivs[a][0] + estimativa.ivs[a][1]) / 2 : ivDigitado
+  const iv = ivs.includes(ivDigitado) && !vazio ? ivDigitado : ivs.reduce((m, x) => (Math.abs(x - alvo) < Math.abs(m - alvo) ? x : m), ivs[0])
+  const pontos = pares[iv]
+  const ev = !vazio && pontos.includes(Math.floor(evDigitado / 4)) ? evDigitado : pontos[0] * 4
+  return { iv, ev }
+}
+
+// Junta o histórico e o save de agora em versões para a estimativa (uma por nível, a mais recente vale)
+function versoesParaEstimar(salvos, basePorNome) {
+  const porNivel = {}
+  salvos.forEach(v => { if (v && v.nivel >= 1 && v.stats) porNivel[v.nivel] = v })
+  return Object.values(porNivel)
+    .sort((x, y) => x.nivel - y.nivel)
+    .map(v => ({ nivel: v.nivel, stats: v.stats, semBatalha: Boolean(v.semBatalha), base: basePorNome(v.nome) }))
+}
+
 // Nome do jogo para mostrar: "FireRed", "PokeMMO", "Pixelmon"...
 function nomeDoJogo(p) {
   const jogo = plataformaDe(p) === 'Nintendo' && JOGOS_NINTENDO[p.jogoNintendo]
@@ -342,5 +422,5 @@ function salvarTreinador(nick) {
 
 // O servidor (Node) usa a mesma fórmula de stats, para a nota bater com o que aparece na tela
 if (typeof module !== 'undefined') {
-  module.exports = { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem, baseNaGeracao, baseDoPokemon, geracoesPossiveis }
+  module.exports = { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem, baseNaGeracao, baseDoPokemon, geracoesPossiveis, estimarIvsEvs, versoesParaEstimar, escolherIvEv }
 }

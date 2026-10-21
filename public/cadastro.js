@@ -129,10 +129,13 @@ function preencherStatsCalculados() {
   ATRIBUTOS.forEach(a => { document.getElementById(a).value = stats[a] })
 }
 
-// ---------- Descobrir IVs (jogos que não mostram os IVs, como os da Nintendo) ----------
-// Testa os 32 valores possíveis de cada IV e fica com os que dão exatamente os stats anotados.
-// Cada leitura de outro nível corta mais valores: com 2 ou 3 níveis, quase sempre sobra um só.
-let leituras = []   // [{ nivel, stats, evs }] que o servidor guardou em cada save deste Pokémon
+// ---------- Descobrir IVs e EVs (jogos de emulador, que não mostram nenhum dos dois) ----------
+// Usa todos os saves deste Pokémon (histórico) + o que está no formulário. O IV nunca muda e os EVs só
+// aumentam; com isso, testa todas as combinações e mostra as faixas possíveis (estimarIvsEvs, em comum.js).
+// O servidor faz a mesma conta ao salvar, então os números sempre batem com os stats do jogo.
+let salvosAnteriores = []   // versões salvas deste Pokémon (preenchido ao editar)
+let pokemonEditado = null   // o Pokémon como estava salvo (ao editar)
+const cacheBases = {}       // nome da espécie -> dados oficiais
 
 // Estrelas do Juiz -> faixa de IV
 const FAIXAS_JUIZ = { 1: [0, 10], 2: [11, 20], 3: [21, 29], 4: [30, 30], 5: [31, 31] }
@@ -141,54 +144,78 @@ function statsDoFormulario() {
   return Object.fromEntries(ATRIBUTOS.map(a => [a, valor(a)]))
 }
 
-// Mostra os níveis que já têm stats salvos (o servidor guarda sozinho a cada save)
+// Mostra quantos saves entram na conta
 function mostrarLeituras() {
-  document.getElementById('leituras').innerHTML = leituras.length
-    ? 'Stats salvos automaticamente: ' + leituras.map(l =>
-        `<span class="chip-leitura" title="${ATRIBUTOS.map(a => ABREVIACOES[a] + ' ' + l.stats[a]).join(' · ')}">Nv ${l.nivel}</span>`).join('')
-    : 'Os stats ficam salvos sozinhos a cada save. Atualize a cada poucos níveis e o cálculo fica mais exato.'
+  const niveis = [...new Set(salvosAnteriores.map(v => v.nivel))].sort((a, b) => a - b)
+  document.getElementById('leituras').innerHTML = niveis.length
+    ? 'Saves usados no cálculo: ' + niveis.map(n => `<span class="chip-leitura">Nv ${n}</span>`).join('')
+    : 'Cada save entra no cálculo. Atualize a cada poucos níveis e os valores ficam mais exatos.'
 }
 mostrarLeituras()
 
-function descobrirIvs() {
-  const nivel = valor('nivel')
-  if (!baseAtual) return
-  const natureza = document.getElementById('natureza').value
-  const { evs } = lerIvsEvs()
-  // Leituras guardadas + o que está no formulário agora
-  const todas = leituras.filter(l => l.nivel !== nivel)
-  if (nivel >= 1 && nivel <= 100) todas.push({ nivel, stats: statsDoFormulario(), evs })
-  if (todas.length === 0) {
-    alert('Preencha o nível e os stats primeiro.')
+async function dadosDaEspecieCadastro(nome) {
+  if (!(nome in cacheBases)) {
+    cacheBases[nome] = await fetch('/api/especies/' + encodeURIComponent(nome)).then(r => (r.ok ? r.json() : null)).catch(() => null)
+  }
+  return cacheBases[nome]
+}
+
+function marcarFaixa(id, faixa) {
+  const el = document.getElementById(id)
+  el.className = 'faixa-iv'
+  if (!faixa) {
+    el.textContent = 'Não bate: confira os dados'
+    el.classList.add('erro')
     return
   }
+  el.textContent = faixa[0] === faixa[1] ? '✔ exato' : `${faixa[0]} a ${faixa[1]}`
+  if (faixa[0] === faixa[1]) el.classList.add('exato')
+}
+
+async function descobrirIvsEvs() {
+  const nivel = valor('nivel')
+  if (!baseAtual || !dadosEspecieAtual) return
+  if (nivel < 1 || nivel > 100 || ATRIBUTOS.some(a => !valor(a))) {
+    alert('Preencha o nível e os 6 stats primeiro.')
+    return
+  }
+  const geracao = geracaoDoFormulario()
+  const agora = { nome: dadosEspecieAtual.nome, nivel, stats: statsDoFormulario(), semBatalha: document.getElementById('sem-batalha').checked }
+  const bases = {}
+  for (const v of [...salvosAnteriores, agora]) {
+    if (!(v.nome in bases)) bases[v.nome] = baseNaGeracao(await dadosDaEspecieCadastro(v.nome), geracao)
+  }
+  const recem = idEdicao ? Boolean(pokemonEditado && pokemonEditado.recemCapturado) : document.getElementById('recem-capturado').checked
+  const estimativa = estimarIvsEvs(versoesParaEstimar([...salvosAnteriores, agora], nome => bases[nome]), document.getElementById('natureza').value, recem)
+
+  const vazio = ATRIBUTOS.every(a => !valor('iv' + SUFIXOS[a]))
   ATRIBUTOS.forEach(function(a) {
     const s = SUFIXOS[a]
-    const faixa = document.getElementById('faixa' + s)
+    let iv = estimativa.ivs[a]
+    // O que o Juiz disse (estrelas) estreita ainda mais
     const estrelas = Number(document.getElementById('juiz' + s).dataset.valor)
-    let possiveis = Array.from({ length: 32 }, (_, iv) => iv)
-    todas.filter(l => l.stats[a]).forEach(function(l) {
-      possiveis = possiveis.filter(iv => calcularStats(baseAtual, { [a]: iv }, { [a]: (l.evs || evs)[a] }, natureza, l.nivel)[a] === l.stats[a])
-    })
-    if (estrelas) {
+    if (iv && estrelas) {
       const [min, max] = FAIXAS_JUIZ[estrelas]
-      possiveis = possiveis.filter(iv => iv >= min && iv <= max)
+      iv = Math.max(iv[0], min) <= Math.min(iv[1], max) ? [Math.max(iv[0], min), Math.min(iv[1], max)] : null
     }
-    faixa.className = 'faixa-iv'
-    if (possiveis.length === 0) {
-      faixa.textContent = 'Não bate: confira os dados'
-      faixa.classList.add('erro')
-      return
-    }
-    const min = possiveis[0]
-    const max = possiveis[possiveis.length - 1]
-    // Com mais de um valor possível, fica com o do meio (a faixa aparece embaixo)
-    document.getElementById('iv' + s).value = possiveis[Math.floor((possiveis.length - 1) / 2)]
-    faixa.textContent = min === max ? '✔ exato' : `${min} a ${max}`
-    if (min === max) faixa.classList.add('exato')
+    marcarFaixa('faixa' + s, iv)
+    marcarFaixa('faixaEv' + s, estimativa.evs[a])
+    if (!iv) return
+    // Um IV + EV que dê exatamente o stat de agora (dentro do que o Juiz disse)
+    if (estrelas) Object.keys(estimativa.pares[a]).map(Number).filter(x => x < iv[0] || x > iv[1]).forEach(x => delete estimativa.pares[a][x])
+    const par = escolherIvEv(estimativa, a, valor('iv' + s), valor('ev' + s), vazio)
+    if (!par) return
+    document.getElementById('iv' + s).value = par.iv
+    document.getElementById('ev' + s).value = par.ev
   })
+  atualizarTotalEV()
   atualizarTotalIV()
+  atualizarProjecao()
 }
+
+// Os dois botões fazem a mesma conta (IVs e EVs saem juntos)
+function descobrirIvs() { descobrirIvsEvs() }
+function descobrirEvs() { descobrirIvsEvs() }
 
 // Estrelas do Juiz: clicar marca, clicar de novo na mesma desmarca
 document.getElementById('secao-ivs').addEventListener('click', function(evento) {
@@ -205,78 +232,6 @@ function limparEstrelas() {
     caixa.dataset.valor = 0
     caixa.querySelectorAll('button').forEach(b => b.classList.remove('acesa'))
   })
-}
-
-// ---------- Descobrir EVs ----------
-// Os IVs nunca mudam e os EVs só aumentam. As leituras antigas (quase sem EVs) dizem quais IVs são possíveis;
-// os stats de agora dizem quais pares IV + EV fecham a conta. Testa todos os pares, sem chutar o IV do meio.
-// Cada 4 EVs valem 1 ponto no Nv 100 (menos em nível baixo), então o resultado é uma faixa.
-function descobrirEvs() {
-  const nivel = valor('nivel')
-  if (!baseAtual) return
-  if (nivel < 1 || nivel > 100) {
-    alert('Preencha o Nível Atual (1 a 100) primeiro.')
-    return
-  }
-  const anteriores = leituras.filter(l => l.nivel < nivel)
-  const semIvs = ATRIBUTOS.some(a => document.getElementById('iv' + SUFIXOS[a]).value.trim() === '')
-  if (anteriores.length === 0 && semIvs) {
-    alert('Descubra ou preencha os IVs primeiro: o cálculo dos EVs depende deles.')
-    return
-  }
-  const natureza = document.getElementById('natureza').value
-  const { ivs } = lerIvsEvs()
-  const stat = (a, iv, ev, nv) => calcularStats(baseAtual, { [a]: iv }, { [a]: ev }, natureza, nv)[a]
-
-  ATRIBUTOS.forEach(function(a) {
-    const s = SUFIXOS[a]
-    const faixa = document.getElementById('faixaEv' + s)
-    faixa.className = 'faixa-iv'
-    const atual = valor(a)
-    if (!atual) {
-      faixa.textContent = ''
-      return
-    }
-    // IVs possíveis: pelas leituras antigas (e estrelas do Juiz) ou, sem leituras, o IV do formulário
-    let ivsPossiveis = [ivs[a]]
-    if (anteriores.length) {
-      ivsPossiveis = Array.from({ length: 32 }, (_, iv) => iv)
-        .filter(iv => anteriores.every(l => stat(a, iv, (l.evs || {})[a] || 0, l.nivel) === l.stats[a]))
-      const estrelas = Number(document.getElementById('juiz' + s).dataset.valor)
-      if (estrelas) ivsPossiveis = ivsPossiveis.filter(iv => iv >= FAIXAS_JUIZ[estrelas][0] && iv <= FAIXAS_JUIZ[estrelas][1])
-    }
-    // EVs nunca diminuem: começa do que ele já tinha na última leitura
-    const evMinimo = Math.max(0, ...anteriores.map(l => (l.evs || {})[a] || 0))
-    const pares = []
-    ivsPossiveis.forEach(function(iv) {
-      for (let ev = evMinimo; ev <= 252; ev++) if (stat(a, iv, ev, nivel) === atual) pares.push({ iv, ev })
-    })
-    if (pares.length === 0) {
-      faixa.textContent = 'Não bate: confira os dados'
-      faixa.classList.add('erro')
-      return
-    }
-    const evs = pares.map(p => p.ev)
-    const ivsOk = [...new Set(pares.map(p => p.iv))]
-    const evMin = Math.min(...evs)
-    const evMax = Math.max(...evs)
-    // EV: fica com o menor valor possível, que é o que se tem certeza
-    document.getElementById('ev' + s).value = evMin
-    faixa.textContent = evMin === evMax ? '✔ exato' : `${evMin} a ${evMax}`
-    if (evMin === evMax) faixa.classList.add('exato')
-    // Os stats de agora também estreitam os IVs
-    if (anteriores.length) {
-      const faixaIv = document.getElementById('faixa' + s)
-      const ivMin = Math.min(...ivsOk)
-      const ivMax = Math.max(...ivsOk)
-      document.getElementById('iv' + s).value = ivsOk[Math.floor((ivsOk.length - 1) / 2)]
-      faixaIv.className = 'faixa-iv' + (ivMin === ivMax ? ' exato' : '')
-      faixaIv.textContent = ivMin === ivMax ? '✔ exato' : `${ivMin} a ${ivMax}`
-    }
-  })
-  atualizarTotalEV()
-  atualizarTotalIV()
-  atualizarProjecao()
 }
 
 // Atualiza o total de EVs em tempo real
@@ -610,6 +565,8 @@ async function salvarPokemon() {
   const pokemon = {
     treinador: treinador,
     plataforma: document.getElementById('plataforma').value,
+    recemCapturado: document.getElementById('recem-capturado').checked,
+    semBatalha: document.getElementById('sem-batalha').checked,
     jogoNintendo: document.getElementById('jogoNintendo').value,
     numero: document.getElementById('numero').value,
     nome: nome,
@@ -681,8 +638,17 @@ async function salvarPokemon() {
 
     const salvo = resultado.pokemon
     // O servidor guardou os stats deste save: atualiza a lista de níveis
-    if (Array.isArray(salvo.leituras)) {
-      leituras = salvo.leituras
+    // O servidor calculou as faixas de IVs e EVs com todos os saves: mostra embaixo de cada campo
+    if (salvo.estimativa) {
+      ATRIBUTOS.forEach(function(a) {
+        marcarFaixa('faixa' + SUFIXOS[a], salvo.estimativa.ivs[a])
+        marcarFaixa('faixaEv' + SUFIXOS[a], salvo.estimativa.evs[a])
+      })
+    }
+    if (idEdicao) {
+      pokemonEditado = salvo
+      salvosAnteriores = [...(salvo.historico || []), salvo]
+      document.getElementById('sem-batalha').checked = false
       mostrarLeituras()
     }
 
@@ -754,7 +720,8 @@ function preencherFormulario(p) {
   Object.entries(campos).forEach(([id, v]) => { document.getElementById(id).value = v ?? '' })
   document.getElementById('alfa').checked = Boolean(p.alfa)
   document.getElementById('shiny').checked = Boolean(p.shiny)
-  leituras = Array.isArray(p.leituras) ? p.leituras : []
+  pokemonEditado = p
+  salvosAnteriores = [...(p.historico || []), p]
   mostrarLeituras()
   mostrarJuiz()
   atualizarTotalEV()
@@ -815,6 +782,8 @@ async function iniciarEdicao() {
     if (!pokemon) throw new Error('não é deste treinador')
     preencherFormulario(pokemon)
     aplicarTravas(pokemon)
+    document.getElementById('op-recem').hidden = true
+    document.getElementById('op-sem-batalha').hidden = false
     campoPin.value = sessao.pin
     // Carrega habilidades e ataques da espécie para o autocompletar
     carregarEspecie(pokemon.nome)
@@ -865,7 +834,7 @@ function limparFormulario() {
   document.querySelector('.total-ev').classList.remove('total-invalido')
   document.querySelectorAll('.faixa-iv').forEach(f => { f.textContent = '' })
   limparEstrelas()
-  leituras = []
+  salvosAnteriores = []
   mostrarLeituras()
   atualizarTotalEV()
   atualizarTotalIV()

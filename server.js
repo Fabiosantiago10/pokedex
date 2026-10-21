@@ -4,7 +4,7 @@ const path = require('path')
 const crypto = require('crypto')
 const db = require('./db')
 const pokeapi = require('./pokeapi')
-const { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem, baseDoPokemon, geracoesPossiveis } = require('./public/comum.js')
+const { calcularStats, NATUREZAS, PLATAFORMAS, plataformaDe, JOGOS_NINTENDO, ULTIMO_NUMERO_GERACAO, podeX1EntreJogos, statsQueNaoBatem, baseDoPokemon, geracoesPossiveis, baseNaGeracao, estimarIvsEvs, versoesParaEstimar, escolherIvEv } = require('./public/comum.js')
 
 const app = express()
 
@@ -153,6 +153,21 @@ async function marcarPlataformaAntiga() {
   console.log(antigos.length + ' Pokémon marcado(s) como PokeMMO')
 }
 
+// Emulador com todos os IVs em 0 = cadastrado antes do cálculo automático (o jogo não mostra IVs).
+// Calcula IVs e EVs pelos saves que já existem, para os dados baterem com os stats do jogo.
+async function estimarAntigos() {
+  const alterados = []
+  for (const pokemon of pokemons) {
+    if (plataformaDe(pokemon) !== 'Nintendo' || !ATRIBUTOS.every(a => !pokemon.ivs[a])) continue
+    await aplicarEstimativa(pokemon, pokemon.historico || [])
+    if (ATRIBUTOS.some(a => pokemon.ivs[a])) alterados.push(pokemon)
+  }
+  if (alterados.length > 0) {
+    await db.salvarVariosPokemons(alterados)
+    console.log(alterados.length + ' Pokémon de emulador com IVs e EVs calculados')
+  }
+}
+
 // Recalcula as notas de toda a base (ex: depois de mudar a fórmula)
 async function recalcularNotas() {
   const alterados = []
@@ -197,6 +212,8 @@ async function validarPokemon(corpo) {
     // Para reconhecer o Pokémon no jogo (vários da mesma espécie parecem iguais no PC)
     apelido: texto(corpo.apelido, 20),
     sexo: ['M', 'F'].includes(corpo.sexo) ? corpo.sexo : '',
+    // Para estimar IVs e EVs: desde o save anterior ele não batalhou (ex: subiu com Rare Candy)
+    semBatalha: corpo.semBatalha === true,
     alfa: corpo.alfa === true,
     shiny: corpo.shiny === true,
     nivel: numero(corpo.nivel),
@@ -311,7 +328,7 @@ function encontrarRepetido(pokemon, ignorarId) {
 
 // Histórico: a cada edição guarda como o Pokémon estava antes (nível, espécie, stats, ataques...).
 // Serve para comparar a evolução e estimar os EVs ganhos entre um save e outro.
-const CAMPOS_HISTORICO = ['nome', 'numero', 'tipo1', 'tipo2', 'nivel', 'natureza', 'habilidade', 'stats', 'ivs', 'evs', 'movimentos']
+const CAMPOS_HISTORICO = ['nome', 'numero', 'tipo1', 'tipo2', 'nivel', 'natureza', 'habilidade', 'stats', 'ivs', 'evs', 'movimentos', 'semBatalha']
 const MAX_HISTORICO = 50
 
 function adicionarAoHistorico(original, novo) {
@@ -342,6 +359,33 @@ function comLeitura(lista, p) {
     .concat(leituraDe(p))
     .sort((a, b) => a.nivel - b.nivel)
     .slice(-MAX_LEITURAS)
+}
+
+// ---------- IVs e EVs estimados (emulador) ----------
+// Os jogos de emulador não mostram IVs nem EVs. A cada save o servidor junta todos os saves do Pokémon
+// e calcula as faixas possíveis (ver estimarIvsEvs em comum.js). Se o que foi digitado não cabe na faixa
+// (ou ficou tudo em 0), troca pelo valor da faixa, para os dados sempre baterem com os stats do jogo.
+async function aplicarEstimativa(pokemon, anteriores) {
+  if (pokemon.plataforma !== 'Nintendo') return
+  const bases = {}
+  for (const v of [...anteriores, pokemon]) {
+    if (v.nome in bases) continue
+    let dados = null
+    try { dados = await pokeapi.dadosDoPokemon(v.nome) } catch (e) { dados = null }
+    bases[v.nome] = baseNaGeracao(dados, pokemon.geracaoJogo)
+  }
+  const versoes = versoesParaEstimar([...anteriores, pokemon], nome => bases[nome])
+  const estimativa = estimarIvsEvs(versoes, pokemon.natureza, pokemon.recemCapturado)
+  pokemon.estimativa = estimativa
+
+  // IVs todos em 0 = a pessoa não sabe (o jogo não mostra): escolhe pela faixa
+  const vazio = ATRIBUTOS.every(a => !pokemon.ivs[a])
+  ATRIBUTOS.forEach(function(a) {
+    const par = escolherIvEv(estimativa, a, pokemon.ivs[a], pokemon.evs[a], vazio)
+    if (!par) return
+    pokemon.ivs[a] = par.iv
+    pokemon.evs[a] = par.ev
+  })
 }
 
 // ---------- Regras de edição ----------
@@ -550,6 +594,10 @@ app.post('/api/pokemons', async function(req, res) {
     })
   }
 
+  // Ainda não batalhou: 0 EVs no primeiro save (deixa o cálculo dos IVs bem mais exato)
+  pokemon.recemCapturado = req.body.recemCapturado === true
+  await aplicarEstimativa(pokemon, [])
+
   pokemon.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
   pokemon.leituras = comLeitura([], pokemon)
   pokemon.pontuacao = await pontuar(pokemon)
@@ -631,6 +679,9 @@ app.put('/api/pokemons/:id', async function(req, res) {
   const auth = await autenticar(original.treinador, req.body.pin, req.body.inicial)
   if (!auth.ok) return res.status(auth.status).json({ erros: [auth.erro] })
 
+  pokemon.recemCapturado = Boolean(original.recemCapturado)
+  await aplicarEstimativa(pokemon, [...(original.historico || []), original])
+
   const errosEdicao = await validarEdicao(original, pokemon)
   if (errosEdicao.length > 0) return res.status(400).json({ erros: errosEdicao })
 
@@ -675,6 +726,7 @@ db.iniciar()
       console.log(pokemons.length + ' Pokémon(s) no banco')
       // Um depois do outro: os dois gravam a base
       marcarPlataformaAntiga()
+        .then(estimarAntigos)
         .then(recalcularNotas)
         .catch(erro => console.error('Erro ao atualizar a base:', erro))
     })
