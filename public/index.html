@@ -37,9 +37,21 @@
     <div class="barra-ferramentas">
       <h2 class="titulo-secao">Todos os Pokémon <span id="contador" class="contador"></span></h2>
     </div>
-    <input type="search" id="busca" class="busca" placeholder="Buscar Pokémon pelo nome..." autocomplete="off">
+    <div class="linha-busca">
+      <input type="search" id="busca" class="busca" placeholder="Buscar Pokémon pelo nome..." autocomplete="off">
+      <label class="ordem">Ordenar por
+        <select id="ordenar">
+          <option value="forte">Mais fortes</option>
+          <option value="numero">Número da Pokédex</option>
+          <option value="nome">Nome (A–Z)</option>
+          <option value="nivel">Maior nível</option>
+          <option value="recentes">Cadastrados por último</option>
+        </select>
+      </label>
+    </div>
 
     <div id="lista" class="grade-cartas"></div>
+    <button type="button" id="mostrar-mais" class="mostrar-mais" hidden>Mostrar mais</button>
   </section>
 
   <div id="detalhe" class="modal" onclick="fecharDetalhe()">

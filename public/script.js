@@ -125,14 +125,30 @@ function htmlCarta(p) {
   `
 }
 
+// Com muitos Pokémon, mostra aos poucos: 24 por vez, com "Mostrar mais"
+const POR_PAGINA = 24
+let mostrando = POR_PAGINA
+let listaAtual = []
+
 function renderizarCards(lista) {
   const grade = document.getElementById('lista')
+  const mais = document.getElementById('mostrar-mais')
+  listaAtual = lista
   if (lista.length === 0) {
     grade.innerHTML = '<p class="vazio">Nenhum Pokémon encontrado.</p>'
+    mais.hidden = true
     return
   }
-  grade.innerHTML = lista.map(htmlCarta).join('')
+  grade.innerHTML = lista.slice(0, mostrando).map(htmlCarta).join('')
+  const faltam = lista.length - mostrando
+  mais.hidden = faltam <= 0
+  mais.textContent = `Mostrar mais (${faltam} restantes)`
 }
+
+document.getElementById('mostrar-mais').addEventListener('click', function() {
+  mostrando += POR_PAGINA
+  renderizarCards(listaAtual)
+})
 
 // ---------- Detalhes ----------
 function linhasBarras(valores, maximo, cor, destaque31) {
@@ -337,13 +353,18 @@ document.getElementById('filtro-plataforma').addEventListener('click', function(
 
 // ---------- Busca ----------
 function aplicarFiltros() {
+  mostrando = POR_PAGINA  // nova busca ou nova ordem: volta para o começo
   const texto = document.getElementById('busca').value.trim().toLowerCase()
-  const filtrados = ordenarPorNota(doJogo(todosPokemons).filter(p => p.nome.toLowerCase().includes(texto)))
+  const ordem = document.getElementById('ordenar').value
+  // Sempre parte da ordem "mais fortes": dentro da mesma espécie (ou nível), o mais forte vem antes
+  let filtrados = ordenarPorNota(doJogo(todosPokemons).filter(p => p.nome.toLowerCase().includes(texto)))
+  if (ORDENS_LISTA[ordem]) filtrados = [...filtrados].sort(ORDENS_LISTA[ordem].comparar)
   document.getElementById('contador').textContent = filtrados.length ? `(${filtrados.length})` : ''
   renderizarCards(filtrados)
 }
 
 document.getElementById('busca').addEventListener('input', aplicarFiltros)
+document.getElementById('ordenar').addEventListener('change', aplicarFiltros)
 
 async function carregarPokemons() {
   try {

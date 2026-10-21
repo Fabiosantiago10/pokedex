@@ -1169,3 +1169,55 @@ table.comparativo .selo {
 .link-dicas:hover {
   text-decoration: underline;
 }
+
+/* ---------- Busca + ordenar (Pokédex e Meus Pokémon) ---------- */
+.linha-busca {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.ordem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto-suave);
+  white-space: nowrap;
+}
+
+.ordem select {
+  padding: 10px 12px;
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  background: white;
+}
+
+@media (max-width: 720px) {
+  .linha-busca { grid-template-columns: 1fr; gap: 0; }
+  .ordem { padding: 0 0 14px 0; }
+}
+
+.mostrar-mais {
+  display: block;
+  margin: 20px auto 0 auto;
+  padding: 10px 24px;
+  border: 2px solid var(--vermelho);
+  border-radius: 999px;
+  background: white;
+  color: var(--vermelho);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mostrar-mais:hover {
+  background: var(--vermelho);
+  color: white;
+}

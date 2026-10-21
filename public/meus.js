@@ -21,6 +21,8 @@ async function verificarNick() {
   }
 }
 
+let jogoFiltro = ''   // '' = todos os jogos
+
 // Agrupa por espécie; dentro de cada grupo, do mais forte para o mais fraco
 function agruparPorEspecie(lista) {
   const grupos = {}
@@ -30,23 +32,61 @@ function agruparPorEspecie(lista) {
     if (!grupos[chave]) grupos[chave] = []
     grupos[chave].push(p)
   })
+  const ordem = document.getElementById('ordem').value
+  // "Atualizados por último": o grupo vale pelo save mais recente dele
+  const maisRecente = g => g.map(p => String(p.atualizadoEm || p.criadoEm || '')).sort().pop()
   return Object.values(grupos)
     .map(g => g.sort((a, b) => b.pontuacao - a.pontuacao))
-    .sort((a, b) => b.length - a.length || a[0].nome.localeCompare(b[0].nome))
+    .sort(ordem === 'recentes'
+      ? (a, b) => maisRecente(b).localeCompare(maisRecente(a))
+      : (a, b) => ORDENS_LISTA[ordem].comparar(a[0], b[0]))
+}
+
+// Chips de jogo com a quantidade de cada um
+function renderizarFiltroJogo() {
+  const jogos = Object.keys(PLATAFORMAS).filter(id => meusPokemons.some(p => plataformaDe(p) === id))
+  document.getElementById('filtro-jogo').hidden = jogos.length < 2
+  document.getElementById('filtro-jogo').innerHTML = [['', '📋 Todos', meusPokemons.length],
+    ...jogos.map(id => [id, PLATAFORMAS[id].icone + ' ' + PLATAFORMAS[id].nome, meusPokemons.filter(p => plataformaDe(p) === id).length])]
+    .map(([id, nome, total]) => `<button type="button" role="tab" class="chip-plataforma ${id === jogoFiltro ? 'ativo' : ''}" data-jogo="${id}" aria-selected="${id === jogoFiltro}">${nome} <span>${total}</span></button>`)
+    .join('')
+}
+
+document.getElementById('filtro-jogo').addEventListener('click', function(evento) {
+  const botao = evento.target.closest('[data-jogo]')
+  if (!botao) return
+  jogoFiltro = botao.dataset.jogo
+  renderizar()
+})
+document.getElementById('ordem').addEventListener('change', renderizar)
+
+// Espécies abertas (continuam abertas ao filtrar ou trocar a ordem)
+const abertos = new Set()
+let abrirTodos = false
+
+function chaveGrupo(p) {
+  return p.nome.toLowerCase() + '|' + plataformaDe(p)
 }
 
 function htmlGrupo(grupo) {
   const primeiro = grupo[0]
   const cor = coresTipo[primeiro.tipo1] || '#9aa0a6'
+  const chave = chaveGrupo(primeiro)
+  const aberto = abrirTodos || abertos.has(chave)
   return `
-    <div class="grupo" style="border-top-color:${cor}">
-      <div class="grupo-cabecalho">
+    <details class="grupo" style="border-left-color:${cor}" data-chave="${escaparHtml(chave)}" ${aberto ? 'open' : ''}>
+      <summary class="grupo-cabecalho">
         ${imagemPokemon(primeiro, 'grupo-imagem')}
-        <div>
-          <h3>${escaparHtml(primeiro.nome)} <span class="total-badge">${grupo.length}</span></h3>
-          <span class="tipos">${badgeTipo(primeiro.tipo1)}${badgeTipo(primeiro.tipo2)} ${seloPlataforma(primeiro)}</span>
+        <div class="grupo-nome">
+          <h3><small>#${escaparHtml(primeiro.numero)}</small> ${escaparHtml(primeiro.nome)} <span class="total-badge">${grupo.length}</span></h3>
+          <span class="tipos">${badgeTipo(primeiro.tipo1)}${badgeTipo(primeiro.tipo2)}</span>
         </div>
-      </div>
+        <div class="grupo-melhor">
+          <small>${grupo.length > 1 ? '🏆 Melhor' : 'Único'}</small>
+          <span>${identificacao(primeiro).replace(/<[^>]+>/g, '')} · IVs ${soma(primeiro.ivs)}/186</span>
+        </div>
+        <span class="seta" aria-hidden="true">▾</span>
+      </summary>
       <div class="tabela-rolagem">
         <table class="tabela-meus">
           <tr><th>#</th><th>Como reconhecer no jogo</th><th>IVs</th><th>EVs</th><th></th></tr>
@@ -72,20 +112,39 @@ function htmlGrupo(grupo) {
           `).join('')}
         </table>
       </div>
-    </div>
+    </details>
   `
 }
 
+// Lembra quais espécies a pessoa abriu
+document.getElementById('grupos').addEventListener('toggle', function(evento) {
+  const grupo = evento.target
+  if (!grupo.matches || !grupo.matches('details.grupo')) return
+  if (grupo.open) abertos.add(grupo.dataset.chave)
+  else abertos.delete(grupo.dataset.chave)
+}, true)
+
+// Separado por jogo (cada jogo com o seu título) e, dentro dele, por espécie
 function renderizar() {
   const texto = campoFiltro.value.trim().toLowerCase()
-  const grupos = agruparPorEspecie(meusPokemons.filter(p => p.nome.toLowerCase().includes(texto)))
   const divGrupos = document.getElementById('grupos')
+  renderizarFiltroJogo()
   if (meusPokemons.length === 0) {
     divGrupos.innerHTML = '<p class="vazio">Você ainda não cadastrou nenhum Pokémon. <a href="cadastro.html">Cadastre o primeiro!</a></p>'
     return
   }
-  divGrupos.innerHTML = grupos.length
-    ? grupos.map(htmlGrupo).join('')
+  const filtrados = meusPokemons.filter(p => p.nome.toLowerCase().includes(texto) && (!jogoFiltro || plataformaDe(p) === jogoFiltro))
+  // Procurando uma espécie (ou com poucas), já mostra tudo aberto
+  abrirTodos = Boolean(texto) || agruparPorEspecie(filtrados).length <= 3
+  const jogos = Object.keys(PLATAFORMAS).filter(id => filtrados.some(p => plataformaDe(p) === id))
+  divGrupos.innerHTML = jogos.length
+    ? jogos.map(function(id) {
+        const doJogo = filtrados.filter(p => plataformaDe(p) === id)
+        return `
+          <h3 class="titulo-jogo">${PLATAFORMAS[id].icone} ${PLATAFORMAS[id].nome} <span>${doJogo.length} Pokémon</span></h3>
+          ${agruparPorEspecie(doJogo).map(htmlGrupo).join('')}
+        `
+      }).join('')
     : '<p class="vazio">Nenhum Pokémon encontrado com esse filtro.</p>'
 }
 

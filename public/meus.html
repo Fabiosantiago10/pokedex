@@ -85,7 +85,19 @@
         </div>
       </div>
       <p id="resumo" class="resumo"></p>
-      <input type="search" id="filtro-especie" class="busca" placeholder="Filtrar por espécie..." autocomplete="off">
+      <div class="ferramentas-lista">
+        <div class="filtro-plataforma" id="filtro-jogo" role="tablist" aria-label="Jogo"></div>
+        <div class="linha-busca">
+          <input type="search" id="filtro-especie" class="busca" placeholder="Filtrar por espécie..." autocomplete="off">
+          <label class="ordem">Ordenar por
+            <select id="ordem">
+              <option value="numero">Número da Pokédex</option>
+              <option value="nome">Nome (A–Z)</option>
+              <option value="recentes">Atualizados por último</option>
+            </select>
+          </label>
+        </div>
+      </div>
       <div id="grupos"></div>
     </div>
 

@@ -384,6 +384,14 @@ function contarPerfeitos(ivs) {
   return ATRIBUTOS.filter(a => ivs[a] === 31).length
 }
 
+// Ordens das listas (a mesma em "Meus Pokémon" e na Pokédex)
+const ORDENS_LISTA = {
+  numero: { nome: 'Número da Pokédex', comparar: (a, b) => (parseInt(a.numero, 10) || 9999) - (parseInt(b.numero, 10) || 9999) || a.nome.localeCompare(b.nome) },
+  nome: { nome: 'Nome (A–Z)', comparar: (a, b) => a.nome.localeCompare(b.nome) },
+  nivel: { nome: 'Maior nível', comparar: (a, b) => b.nivel - a.nivel },
+  recentes: { nome: 'Cadastrados por último', comparar: (a, b) => String(b.atualizadoEm || b.criadoEm || '').localeCompare(String(a.atualizadoEm || a.criadoEm || '')) }
+}
+
 // Sessão de "Meus Pokémon" (nick + PIN). Fica só nesta aba e some ao fechá-la.
 function lerSessao() {
   try {
