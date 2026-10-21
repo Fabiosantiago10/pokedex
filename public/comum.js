@@ -167,13 +167,17 @@ function estimarIvsEvs(versoes, natureza, recemCapturado) {
   return resultado
 }
 
-// IV + EV que fecham o stat de agora: mantém o que foi digitado se já fecha; senão, o mais perto disso
-// (o IV do meio da faixa, quando não foi digitado nada) e o menor EV possível para esse IV.
+// IV + EV que fecham o stat de agora: mantém o que foi digitado se já fecha. Sem nada digitado, fica com o
+// menor EV possível (EVs vêm de batalhas, então o menor é o mais provável) e o IV do meio entre os que dão esse EV.
 function escolherIvEv(estimativa, a, ivDigitado, evDigitado, vazio) {
   const pares = estimativa.pares[a]
   if (!pares) return null
-  const ivs = Object.keys(pares).map(Number)
-  const alvo = vazio ? (estimativa.ivs[a][0] + estimativa.ivs[a][1]) / 2 : ivDigitado
+  let ivs = Object.keys(pares).map(Number)
+  if (vazio) {
+    const menorEv = Math.min(...ivs.map(iv => pares[iv][0]))
+    ivs = ivs.filter(iv => pares[iv][0] === menorEv)
+  }
+  const alvo = vazio ? (Math.min(...ivs) + Math.max(...ivs)) / 2 : ivDigitado
   const iv = ivs.includes(ivDigitado) && !vazio ? ivDigitado : ivs.reduce((m, x) => (Math.abs(x - alvo) < Math.abs(m - alvo) ? x : m), ivs[0])
   const pontos = pares[iv]
   const ev = !vazio && pontos.includes(Math.floor(evDigitado / 4)) ? evDigitado : pontos[0] * 4

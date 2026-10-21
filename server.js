@@ -158,9 +158,16 @@ async function marcarPlataformaAntiga() {
 async function estimarAntigos() {
   const alterados = []
   for (const pokemon of pokemons) {
-    if (plataformaDe(pokemon) !== 'Nintendo' || !ATRIBUTOS.every(a => !pokemon.ivs[a])) continue
-    await aplicarEstimativa(pokemon, pokemon.historico || [])
-    if (ATRIBUTOS.some(a => pokemon.ivs[a])) alterados.push(pokemon)
+    // Os que estão com IVs em 0 ou com IVs que o próprio site calculou: calcula de novo com a conta atual
+    if (plataformaDe(pokemon) !== 'Nintendo') continue
+    const zerados = ATRIBUTOS.every(a => !pokemon.ivs[a])
+    // (sem a marcação ivsCalculados = calculado pela versão anterior do site, antes da marcação existir)
+    const calculados = pokemon.ivsCalculados === true || (pokemon.ivsCalculados === undefined && Boolean(pokemon.estimativa))
+    if (!zerados && !calculados) continue
+    const antes = JSON.stringify([pokemon.ivs, pokemon.evs])
+    await aplicarEstimativa(pokemon, pokemon.historico || [], { ...pokemon, ivsCalculados: true })
+    if (JSON.stringify([pokemon.ivs, pokemon.evs]) === antes) continue
+    alterados.push(pokemon)
   }
   if (alterados.length > 0) {
     await db.salvarVariosPokemons(alterados)
@@ -365,7 +372,9 @@ function comLeitura(lista, p) {
 // Os jogos de emulador não mostram IVs nem EVs. A cada save o servidor junta todos os saves do Pokémon
 // e calcula as faixas possíveis (ver estimarIvsEvs em comum.js). Se o que foi digitado não cabe na faixa
 // (ou ficou tudo em 0), troca pelo valor da faixa, para os dados sempre baterem com os stats do jogo.
-async function aplicarEstimativa(pokemon, anteriores) {
+// original: como estava salvo (na edição). Se os IVs/EVs eram os que o site calculou e não foram mexidos,
+// calcula de novo do zero (com mais saves, a conta melhora). Se a pessoa digitou os dela, respeita quando fecham.
+async function aplicarEstimativa(pokemon, anteriores, original) {
   if (pokemon.plataforma !== 'Nintendo') return
   const bases = {}
   for (const v of [...anteriores, pokemon]) {
@@ -379,7 +388,10 @@ async function aplicarEstimativa(pokemon, anteriores) {
   pokemon.estimativa = estimativa
 
   // IVs todos em 0 = a pessoa não sabe (o jogo não mostra): escolhe pela faixa
-  const vazio = ATRIBUTOS.every(a => !pokemon.ivs[a])
+  const calculadosAntes = Boolean(original && original.ivsCalculados &&
+    ATRIBUTOS.every(a => pokemon.ivs[a] === original.ivs[a] && pokemon.evs[a] === original.evs[a]))
+  const vazio = calculadosAntes || ATRIBUTOS.every(a => !pokemon.ivs[a])
+  pokemon.ivsCalculados = vazio
   ATRIBUTOS.forEach(function(a) {
     const par = escolherIvEv(estimativa, a, pokemon.ivs[a], pokemon.evs[a], vazio)
     if (!par) return
@@ -680,7 +692,7 @@ app.put('/api/pokemons/:id', async function(req, res) {
   if (!auth.ok) return res.status(auth.status).json({ erros: [auth.erro] })
 
   pokemon.recemCapturado = Boolean(original.recemCapturado)
-  await aplicarEstimativa(pokemon, [...(original.historico || []), original])
+  await aplicarEstimativa(pokemon, [...(original.historico || []), original], original)
 
   const errosEdicao = await validarEdicao(original, pokemon)
   if (errosEdicao.length > 0) return res.status(400).json({ erros: errosEdicao })
