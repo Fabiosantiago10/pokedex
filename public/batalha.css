@@ -489,3 +489,73 @@
   font-size: 13px;
   color: var(--texto-suave);
 }
+
+/* ---------- Nível da batalha ---------- */
+.nivel-batalha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.rotulo-nivel {
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
+.chips-nivel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip-nivel,
+#nivel-outro {
+  padding: 6px 14px;
+  border: 2px solid var(--borda);
+  border-radius: 999px;
+  background: white;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto);
+  cursor: pointer;
+}
+
+#nivel-outro {
+  width: 90px;
+  cursor: text;
+  outline: none;
+}
+
+.chip-nivel:hover,
+#nivel-outro:focus {
+  border-color: var(--vermelho);
+}
+
+.chip-nivel.ativo,
+#nivel-outro.ativo {
+  border-color: var(--vermelho);
+  background: var(--vermelho);
+  color: white;
+}
+
+#nivel-outro.ativo::placeholder {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.evoluir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--texto-suave);
+  cursor: pointer;
+}
+
+.nota-projecao {
+  font-size: 12px !important;
+  font-weight: 600;
+  color: #5a3fb3 !important;
+}

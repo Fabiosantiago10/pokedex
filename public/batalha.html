@@ -46,6 +46,16 @@
         <select id="lado-b"></select>
       </div>
     </div>
+    <div class="nivel-batalha">
+      <span class="rotulo-nivel">Nível da batalha</span>
+      <div class="chips-nivel" id="chips-nivel">
+        <button type="button" class="chip-nivel ativo" data-nivel="">Nível de hoje</button>
+        <button type="button" class="chip-nivel" data-nivel="50">Nv 50</button>
+        <button type="button" class="chip-nivel" data-nivel="100">Nv 100</button>
+        <input type="number" id="nivel-outro" min="1" max="100" placeholder="Outro" aria-label="Outro nível">
+      </div>
+      <label class="evoluir"><input type="checkbox" id="evoluir" checked> Evoluir quando chegar no nível</label>
+    </div>
     <p id="status" class="status"></p>
 
     <div id="resultado"></div>

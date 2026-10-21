@@ -117,13 +117,22 @@ async function dadosDoPokemon(nome) {
   const slug = paraSlug(nome)
   // Entradas antigas do cache não têm os stats base, os EVs que rende ou o poder dos ataques: busca de novo
   const salvo = cache.pokemons[slug]
-  if (salvo && salvo.base && salvo.rendeEvs && salvo.basesAntigas && (salvo.ataques.length === 0 || 'categoria' in salvo.ataques[0])) return salvo
+  if (salvo && salvo.base && salvo.rendeEvs && salvo.basesAntigas && salvo.evolucoes && (salvo.ataques.length === 0 || 'categoria' in salvo.ataques[0])) return salvo
 
   // A espécie diz qual é a forma padrão (ex: "deoxys" -> "deoxys-normal")
   const especie = await buscarJson(`${API}/pokemon-species/${slug}`)
   if (!especie) return null
   const padrao = especie.varieties.find(v => v.is_default) || especie.varieties[0]
   const pokemon = await buscarJson(padrao.pokemon.url)
+
+  // Para quem ela evolui e em que nível (ex: Rattata -> Raticate no Nv 20). Nível null = pedra, troca etc.
+  const cadeia = especie.evolution_chain ? await buscarJson(especie.evolution_chain.url) : null
+  const acharNo = no => (no.species.name === especie.name ? no : no.evolves_to.map(acharNo).find(Boolean))
+  const noDaEspecie = cadeia && acharNo(cadeia.chain)
+  const evolucoes = (noDaEspecie ? noDaEspecie.evolves_to : []).map(function(filho) {
+    const porNivel = filho.evolution_details.find(e => e.trigger && e.trigger.name === 'level-up' && e.min_level)
+    return { nome: formatarNome(filho.species.name), nivel: porNivel ? porNivel.min_level : null }
+  })
 
   const aprendidos = pokemon.moves
     .map(m => ({ slug: m.move.name, metodos: metodosDeAprendizado(m.version_group_details) }))
@@ -144,6 +153,7 @@ async function dadosDoPokemon(nome) {
     // EVs que ele dá a quem o derrota (ex: Pidgey -> 1 de Velocidade)
     rendeEvs: Object.fromEntries(pokemon.stats.map(s => [NOMES_STATS[s.stat.name], s.effort])),
     // Status base que mudaram com o tempo. Ex: Pidgeot tinha Velocidade 91 até a 5ª geração -> { ate: 5, stats: { velocidade: 91 } }
+    evolucoes,
     basesAntigas: (pokemon.past_stats || []).map(function(antigo) {
       const stats = {}
       antigo.stats.forEach(s => { if (NOMES_STATS[s.stat.name]) stats[NOMES_STATS[s.stat.name]] = s.base_stat })

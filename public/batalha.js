@@ -44,6 +44,42 @@ function htmlIvsEvs(p, dadosP, golpe, oponente) {
   `
 }
 
+// ---------- E se fosse no nível X? ----------
+// Recalcula os stats no nível escolhido com os IVs, EVs e natureza de hoje.
+// Se "Evoluir" estiver marcado e o nível permitir, evolui (ex: Rattata Nv 100 vira Raticate, que evolui no Nv 20).
+// Evolução por pedra ou troca não acontece sozinha (não depende de nível).
+let nivelBatalha = null   // null = cada um no nível de hoje
+
+async function projetar(p, dados) {
+  if (!nivelBatalha || !dados) return { p, dados }
+  let atual = dados
+  const caminho = []
+  const evoluir = document.getElementById('evoluir').checked
+  // Só evolui para frente: num nível menor que o de hoje ele continua a mesma espécie
+  while (evoluir && nivelBatalha > p.nivel && atual && atual.evolucoes) {
+    const proxima = atual.evolucoes.find(e => e.nivel && e.nivel <= nivelBatalha)
+    if (!proxima) break
+    const dadosProxima = await dadosDaEspecie(proxima.nome)
+    if (!dadosProxima) break
+    caminho.push(`${dadosProxima.nome} (Nv ${proxima.nivel})`)
+    atual = dadosProxima
+  }
+  const base = baseDoPokemon(p, atual)
+  return {
+    dados: atual,
+    p: {
+      ...p,
+      nome: atual.nome,
+      numero: atual.numero,
+      tipo1: atual.tipos[0],
+      tipo2: atual.tipos[1] || null,
+      nivel: nivelBatalha,
+      stats: calcularStats(base, p.ivs, p.evs, p.natureza, nivelBatalha),
+      projecao: { nivelHoje: p.nivel, nomeHoje: p.nome, caminho }
+    }
+  }
+}
+
 // ---------- Desenho ----------
 function htmlLado(p, golpes, oponente, melhor) {
   return `
@@ -54,6 +90,7 @@ function htmlLado(p, golpes, oponente, melhor) {
           <h3>${escaparHtml(p.nome)}</h3>
           <div class="tipos">${badgeTipo(p.tipo1)}${badgeTipo(p.tipo2)} ${selosVariante(p)}</div>
           <p>${identificacao(p)}</p>
+          ${p.projecao ? `<p class="nota-projecao">🔮 Simulado no Nv ${p.nivel} · hoje: ${escaparHtml(p.projecao.nomeHoje)} Nv ${p.projecao.nivelHoje}${p.projecao.caminho.length ? ' · evoluiu para ' + p.projecao.caminho.map(escaparHtml).join(' → ') : ''}</p>` : ''}
         </div>
       </div>
       <div class="stats-lado">
@@ -84,26 +121,34 @@ function htmlLado(p, golpes, oponente, melhor) {
 }
 
 async function atualizar() {
-  const a = todosPokemons.find(p => p.id === selA.value)
-  const b = todosPokemons.find(p => p.id === selB.value)
+  const originalA = todosPokemons.find(p => p.id === selA.value)
+  const originalB = todosPokemons.find(p => p.id === selB.value)
   const resultado = document.getElementById('resultado')
   seletorA.atualizar()
   seletorB.atualizar()
-  if (!a || !b) return
+  if (!originalA || !originalB) return
 
-  // Link da batalha (para mandar a um amigo)
-  history.replaceState(null, '', `?a=${encodeURIComponent(a.id)}&b=${encodeURIComponent(b.id)}`)
+  // Link da batalha (para mandar a um amigo), com o nível escolhido
+  const extra = nivelBatalha ? `&nv=${nivelBatalha}${document.getElementById('evoluir').checked ? '' : '&evo=0'}` : ''
+  history.replaceState(null, '', `?a=${encodeURIComponent(originalA.id)}&b=${encodeURIComponent(originalB.id)}${extra}`)
 
   statusEl.textContent = 'Calculando...'
-  const [dadosA, dadosB] = await Promise.all([dadosDaEspecie(a.nome), dadosDaEspecie(b.nome)])
+  const [dadosOrigA, dadosOrigB] = await Promise.all([dadosDaEspecie(originalA.nome), dadosDaEspecie(originalB.nome)])
+  // A conferência do x1 entre jogos usa os dados de verdade (de hoje)
+  const problemasEntreJogos = plataformaAtual !== ENTRE_JOGOS ? [] : [[originalA, dadosOrigA], [originalB, dadosOrigB]]
+    .map(([p, d]) => ({ p, stats: statsQueNaoBatem(p, baseDoPokemon(p, d)) }))
+    .filter(x => x.stats.length)
+  const [projA, projB] = await Promise.all([projetar(originalA, dadosOrigA), projetar(originalB, dadosOrigB)])
+  const a = projA.p
+  const b = projB.p
+  const dadosA = projA.dados
+  const dadosB = projB.dados
   statusEl.textContent = ''
 
   // Entre jogos: só simula se os stats dos dois batem com a fórmula (senão o jogo deles tem dados diferentes)
   let avisoEntreJogos = ''
   if (plataformaAtual === ENTRE_JOGOS) {
-    const problemas = [[a, dadosA], [b, dadosB]]
-      .map(([p, d]) => ({ p, stats: statsQueNaoBatem(p, baseDoPokemon(p, d)) }))
-      .filter(x => x.stats.length)
+    const problemas = problemasEntreJogos
     if (problemas.length) {
       resultado.innerHTML = `<div class="aviso-entre-jogos bloqueado">
         🚫 <strong>Esta batalha entre jogos foi bloqueada.</strong>
@@ -277,6 +322,25 @@ function preencherSelects() {
   selB.innerHTML = html
 }
 
+// Controles do nível da batalha
+function escolherNivel(nivel) {
+  nivelBatalha = nivel >= 1 && nivel <= 100 ? nivel : null
+  document.querySelectorAll('.chip-nivel').forEach(c => c.classList.toggle('ativo', String(nivelBatalha || '') === c.dataset.nivel))
+  const outro = document.getElementById('nivel-outro')
+  outro.classList.toggle('ativo', Boolean(nivelBatalha) && nivelBatalha !== 50 && nivelBatalha !== 100)
+  if (!outro.classList.contains('ativo')) outro.value = ''
+  atualizar()
+}
+
+document.getElementById('chips-nivel').addEventListener('click', function(evento) {
+  const chip = evento.target.closest('.chip-nivel')
+  if (chip) escolherNivel(Number(chip.dataset.nivel) || null)
+})
+document.getElementById('nivel-outro').addEventListener('change', function() {
+  escolherNivel(parseInt(this.value, 10) || null)
+})
+document.getElementById('evoluir').addEventListener('change', () => atualizar())
+
 async function iniciar() {
   try {
     todosPokemons = await (await fetch('/api/pokemons')).json()
@@ -300,6 +364,17 @@ async function iniciar() {
   const pokemonB = todosPokemons.find(p => p.id === params.get('b'))
   if (pokemonA) plataformaAtual = plataformaDe(pokemonA)
   if (pokemonA && pokemonB && plataformaDe(pokemonA) !== plataformaDe(pokemonB)) plataformaAtual = ENTRE_JOGOS
+  // Link com nível (batalha.html?...&nv=100&evo=0)
+  if (params.get('evo') === '0') document.getElementById('evoluir').checked = false
+  const nivelLink = parseInt(params.get('nv'), 10)
+  if (nivelLink >= 1 && nivelLink <= 100) {
+    nivelBatalha = nivelLink
+    document.querySelectorAll('.chip-nivel').forEach(c => c.classList.toggle('ativo', String(nivelLink) === c.dataset.nivel))
+    if (nivelLink !== 50 && nivelLink !== 100) {
+      document.getElementById('nivel-outro').value = nivelLink
+      document.getElementById('nivel-outro').classList.add('ativo')
+    }
+  }
   trocarJogo(params.get('a'), params.get('b'))
 }
 
