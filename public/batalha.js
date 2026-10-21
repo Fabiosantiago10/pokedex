@@ -87,6 +87,8 @@ async function atualizar() {
   const a = todosPokemons.find(p => p.id === selA.value)
   const b = todosPokemons.find(p => p.id === selB.value)
   const resultado = document.getElementById('resultado')
+  seletorA.atualizar()
+  seletorB.atualizar()
   if (!a || !b) return
 
   // Link da batalha (para mandar a um amigo)
@@ -111,13 +113,8 @@ async function atualizar() {
       </div>`
       return
     }
-    const semGeracao = todosPokemons.filter(p => plataformaDe(p) === 'Nintendo' && !p.jogoNintendo).length
-    avisoEntreJogos = `<div class="aviso-entre-jogos">
-      🔀 <strong>Batalha entre jogos</strong> (${nomeDoJogo(a)} x ${nomeDoJogo(b)}), com as regras do <strong>PokeMMO</strong>:
-      físico ou especial depende de cada ataque. No FireRed seria pelo tipo do ataque, então o resultado lá pode ser outro.
-      É uma comparação para diversão: o ranking continua separado por jogo.
-      ${semGeracao ? `<br><small>${semGeracao} Pokémon de emulador ficaram de fora porque o dono ainda não informou <strong>qual jogo</strong>.
-        O dono informa em Meus Pokémon → Editar.</small>` : ''}
+    avisoEntreJogos = `<div class="aviso-entre-jogos" title="No FireRed, físico ou especial depende do tipo do ataque; no PokeMMO, de cada ataque. O ranking continua separado por jogo.">
+      🔀 <strong>Entre jogos</strong> (${escaparHtml(nomeDoJogo(a))} x ${escaparHtml(nomeDoJogo(b))}) com as regras do PokeMMO. Só para diversão: no jogo o resultado pode ser outro.
     </div>`
   }
 
@@ -200,10 +197,19 @@ async function atualizar() {
 }
 
 // ---------- Escolha dos Pokémon ----------
-function rotulo(p) {
-  const jogo = plataformaAtual === ENTRE_JOGOS ? PLATAFORMAS[plataformaDe(p)].icone + ' ' + nomeDoJogo(p) + ' · ' : ''
-  return `${jogo}${p.nome} · ${identificacao(p).replace(/<[^>]+>/g, '')} · IVs ${soma(p.ivs)}/186`
+// Linha curta embaixo do nome: nível e natureza (e o jogo, quando são de jogos diferentes)
+function descricaoLado(p) {
+  const jogo = plataformaAtual === ENTRE_JOGOS ? ` · ${PLATAFORMAS[plataformaDe(p)].icone} ${escaparHtml(nomeDoJogo(p))}` : ''
+  return identificacao(p).replace(/<[^>]+>/g, '') + jogo
 }
+
+// Na ordem da Pokédex; da mesma espécie, o mais forte primeiro
+function listaParaEscolher() {
+  return [...doJogo()].sort((x, y) => (parseInt(x.numero, 10) || 9999) - (parseInt(y.numero, 10) || 9999) || y.pontuacao - x.pontuacao)
+}
+
+const seletorA = criarSeletorPokemon(selA, listaParaEscolher, descricaoLado)
+const seletorB = criarSeletorPokemon(selB, listaParaEscolher, descricaoLado)
 
 // ---------- Jogo: só batalham Pokémon do mesmo jogo ----------
 // Exceção: "Entre jogos" junta PokeMMO e emuladores com jogo até a 5ª geração (#001 a #649)
@@ -249,7 +255,7 @@ function trocarJogo(idA, idB) {
     return
   }
   statusEl.textContent = ''
-  preencherSelects(lista)
+  preencherSelects()
   const existe = id => lista.some(p => p.id === id)
   selA.value = existe(idA) ? idA : lista[0].id
   selB.value = existe(idB) && idB !== selA.value ? idB : (lista.find(p => p.id !== selA.value) || lista[0]).id
@@ -264,15 +270,9 @@ document.getElementById('filtro-plataforma').addEventListener('click', function(
   trocarJogo()
 })
 
-function preencherSelects(lista) {
-  // Agrupado por espécie, em ordem alfabética
-  const grupos = {}
-  lista.forEach(p => { (grupos[p.nome] = grupos[p.nome] || []).push(p) })
-  const html = Object.keys(grupos).sort().map(nome => `
-    <optgroup label="${escaparHtml(nome)}">
-      ${grupos[nome].sort((x, y) => y.pontuacao - x.pontuacao).map(p => `<option value="${escaparHtml(p.id)}">${escaparHtml(rotulo(p))}</option>`).join('')}
-    </optgroup>
-  `).join('')
+// As listas escondidas guardam a escolha; quem aparece na tela é o seletor com foto
+function preencherSelects() {
+  const html = listaParaEscolher().map(p => `<option value="${escaparHtml(p.id)}">${escaparHtml(p.nome)}</option>`).join('')
   selA.innerHTML = html
   selB.innerHTML = html
 }

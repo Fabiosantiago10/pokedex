@@ -362,3 +362,130 @@
 .chip-plataforma.desligado {
   opacity: 0.55;
 }
+
+/* ---------- Seletor de Pokémon (foto + busca) ---------- */
+.campo-lado {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.seletor {
+  position: relative;
+}
+
+.seletor-botao,
+.seletor-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 12px;
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  background: white;
+  font-family: inherit;
+  text-align: left;
+  color: var(--texto);
+  cursor: pointer;
+}
+
+.seletor-botao:hover,
+.seletor.aberto .seletor-botao {
+  border-color: var(--vermelho);
+}
+
+.seletor-imagem {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.seletor-texto {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.seletor-texto strong {
+  font-size: 15px;
+}
+
+.seletor-texto small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--texto-suave);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seletor-seta {
+  color: var(--texto-suave);
+}
+
+.seletor-painel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  padding: 8px;
+  border-radius: 14px;
+  background: white;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.seletor-busca {
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 9px 12px;
+  border: 2px solid var(--borda);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.seletor-busca:focus {
+  border-color: var(--vermelho);
+}
+
+.seletor-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.seletor-item {
+  border-color: transparent;
+  padding: 4px 8px;
+}
+
+.seletor-item .seletor-imagem {
+  width: 36px;
+  height: 36px;
+}
+
+.seletor-item:hover {
+  background: #f4f5f7;
+}
+
+.seletor-item.atual {
+  background: #fff1f0;
+  border-color: #f3c4c0;
+}
+
+.seletor-vazio {
+  margin: 8px;
+  font-size: 13px;
+  color: var(--texto-suave);
+}

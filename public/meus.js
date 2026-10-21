@@ -101,9 +101,6 @@ function htmlGrupo(grupo) {
               </td>
               <td>${soma(p.evs)}</td>
               <td class="col-acoes">
-                ${plataformaDe(p) === 'Nintendo' && !p.jogoNintendo
-                  ? `<a class="falta-geracao" href="cadastro.html?editar=${encodeURIComponent(p.id)}" title="Sem o jogo ele não entra no x1 entre jogos">⚠️ Informe qual jogo</a>`
-                  : ''}
                 <a class="link-editar" href="cadastro.html?editar=${encodeURIComponent(p.id)}">Editar</a>
                 <a class="link-editar" href="dicas.html?id=${encodeURIComponent(p.id)}">💡 Builds</a>
                 <a class="link-editar" href="historico.html?id=${encodeURIComponent(p.id)}">📜 Histórico</a>
