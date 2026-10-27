@@ -42,6 +42,15 @@
     <h2>Cadastrar Pokémon</h2>
     <p class="subtitulo">Preencha os dados do seu Pokémon. Ele entra na base compartilhada e é comparado com os de outros treinadores da mesma espécie!</p>
 
+    <!-- Ler os prints do Sumário do PokeMMO -->
+    <div class="ler-print">
+      <label class="btn-pequeno botao-print">📷 Ler do print
+        <input type="file" id="arquivo-print" accept="image/*" multiple hidden>
+      </label>
+      <span class="dica-print">Envie (ou cole com Ctrl+V) os prints do <strong>Sumário</strong> do PokeMMO: IVs, stats e informações. O site preenche os campos.</span>
+      <p id="status-print" class="status-print"></p>
+    </div>
+
     <!-- SEÇÃO 1: Dados gerais -->
     <div class="secao-form">
       <h3>Dados Gerais</h3>
@@ -551,6 +560,7 @@
 
   <script src="comum.js"></script>
   <script src="cadastro.js"></script>
+  <script src="leitor-print.js"></script>
 
 </body>
 </html>

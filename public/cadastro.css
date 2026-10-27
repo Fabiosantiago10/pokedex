@@ -478,3 +478,45 @@ main.formulario-container {
 .opcoes-estimativa small {
   color: #777;
 }
+
+/* ---------- Ler do print ---------- */
+.ler-print {
+  margin: 0 0 18px 0;
+  padding: 12px 14px;
+  border: 2px dashed #d5d8dd;
+  border-radius: 12px;
+  background: #fafbfc;
+}
+
+.botao-print {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.dica-print {
+  font-size: 13px;
+  color: #666;
+}
+
+.status-print {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  color: #555;
+}
+
+.status-print:empty {
+  display: none;
+}
+
+.status-print.ok {
+  color: #1a8f3c;
+}
+
+.status-print.erro {
+  color: #b00000;
+}
+
+.status-print .aviso-total {
+  color: #b00000;
+  font-weight: 600;
+}
