@@ -117,7 +117,7 @@ async function dadosDoPokemon(nome) {
   const slug = paraSlug(nome)
   // Entradas antigas do cache não têm os stats base, os EVs que rende ou o poder dos ataques: busca de novo
   const salvo = cache.pokemons[slug]
-  if (salvo && salvo.base && salvo.rendeEvs && salvo.basesAntigas && salvo.evolucoes && (salvo.ataques.length === 0 || 'categoria' in salvo.ataques[0])) return salvo
+  if (salvo && salvo.base && salvo.rendeEvs && salvo.basesAntigas && salvo.evolucoes && salvo.gruposOvo && (salvo.ataques.length === 0 || 'categoria' in salvo.ataques[0])) return salvo
 
   // A espécie diz qual é a forma padrão (ex: "deoxys" -> "deoxys-normal")
   const especie = await buscarJson(`${API}/pokemon-species/${slug}`)
@@ -154,6 +154,9 @@ async function dadosDoPokemon(nome) {
     rendeEvs: Object.fromEntries(pokemon.stats.map(s => [NOMES_STATS[s.stat.name], s.effort])),
     // Status base que mudaram com o tempo. Ex: Pidgeot tinha Velocidade 91 até a 5ª geração -> { ate: 5, stats: { velocidade: 91 } }
     evolucoes,
+    // Breeding: grupos de ovo (ex: field, water1) e a espécie que nasce do ovo (o começo da linha)
+    gruposOvo: (especie.egg_groups || []).map(g => g.name),
+    nasceComo: cadeia ? formatarNome(cadeia.chain.species.name) : nomeEmIngles(especie, slug),
     basesAntigas: (pokemon.past_stats || []).map(function(antigo) {
       const stats = {}
       antigo.stats.forEach(s => { if (NOMES_STATS[s.stat.name]) stats[NOMES_STATS[s.stat.name]] = s.base_stat })

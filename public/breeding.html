@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planejador de Breeding</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="batalha.css">
+  <link rel="stylesheet" href="breeding.css">
+</head>
+
+<body>
+
+  <header class="topo">
+    <div class="topo-conteudo">
+      <a href="index.html" class="marca"><span class="pokebola"></span> Minha Pokédex</a>
+      <nav>
+        <a href="index.html">Pokédex</a>
+        <a href="batalha.html">Batalha</a>
+        <a href="meus.html" class="ativo">Meus Pokémon</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="secao-pagina">
+    <div class="abas-treinador">
+      <span class="logado-como">Treinador: <strong id="nick-logado"></strong></span>
+      <div class="abas-botoes">
+        <a href="meus.html" class="aba">📋 Meus Pokémon cadastrados</a>
+        <a href="cadastro.html" class="aba">➕ Cadastrar Pokémon</a>
+        <a href="dicas.html" class="aba">💡 Dicas e builds</a>
+        <a href="breeding.html" class="aba ativa">🥚 Breeding</a>
+        <button type="button" class="aba aba-sair" id="sair">Sair</button>
+      </div>
+    </div>
+
+    <h2 class="titulo-secao">🥚 Planejador de breeding</h2>
+    <p class="intro">
+      Escolha um dos seus Pokémon do PokeMMO. O site procura, entre os seus, os parceiros que podem cruzar com ele
+      e mostra o que o filhote pode herdar, do melhor casal para o pior.
+    </p>
+
+    <div class="escolha-breeding">
+      <div class="campo-lado">
+        <span>Pokémon</span>
+        <select id="escolhido"></select>
+      </div>
+      <label class="campo-foco">Objetivo
+        <select id="foco">
+          <option value="">Automático (pela espécie)</option>
+          <option value="fisico">Atacante físico</option>
+          <option value="especial">Atacante especial</option>
+          <option value="todos">Todos os IVs iguais</option>
+        </select>
+      </label>
+    </div>
+    <label class="so-mesma"><input type="checkbox" id="so-mesma" checked> Só filhotes da mesma espécie (ex: para melhorar um Growlithe, o filhote tem que ser Growlithe)</label>
+    <p id="status" class="status"></p>
+    <div id="resultado"></div>
+
+    <details class="explicacao">
+      <summary>Como o filhote herda os IVs?</summary>
+      <ul>
+        <li>Cada IV do filhote sai igual ao <strong>da mãe</strong>, ao <strong>do pai</strong> ou à <strong>média dos dois</strong>
+          (arredondada para baixo). Foi o que aconteceu em todos os cruzamentos que você mostrou.</li>
+        <li>Quando os dois pais têm o mesmo valor (ex: 31 e 31), o filhote herda esse valor sem precisar de item.</li>
+        <li>Um <strong>Power Item</strong> num pai trava aquele IV no valor dele. Cada pai segura um item só.
+          O site só sugere Power Item em IV 31.</li>
+        <li>O <strong>Everstone</strong> passa a natureza do pai que segura. O site só sugere quando a natureza é a ideal.</li>
+        <li>No PokeMMO os <strong>dois pais somem</strong> depois do cruzamento.</li>
+        <li>Para cruzar: mesmo grupo de ovo e um macho com uma fêmea, ou qualquer um com um Ditto.</li>
+      </ul>
+    </details>
+  </section>
+
+  <script src="comum.js"></script>
+  <script src="seletor.js"></script>
+  <script src="breeding-calc.js"></script>
+  <script src="breeding.js"></script>
+
+</body>
+
+</html>

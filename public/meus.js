@@ -104,6 +104,7 @@ function htmlGrupo(grupo) {
                 <a class="link-editar" href="cadastro.html?editar=${encodeURIComponent(p.id)}">Editar</a>
                 <a class="link-editar" href="dicas.html?id=${encodeURIComponent(p.id)}">💡 Builds</a>
                 <a class="link-editar" href="historico.html?id=${encodeURIComponent(p.id)}">📜 Histórico</a>
+                ${plataformaDe(p) === 'PokeMMO' ? `<a class="link-editar" href="breeding.html?id=${encodeURIComponent(p.id)}">🥚 Breeding</a>` : ''}
               </td>
             </tr>
           `).join('')}
