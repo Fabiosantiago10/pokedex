@@ -520,3 +520,15 @@ main.formulario-container {
   color: #b00000;
   font-weight: 600;
 }
+
+.dica-mod {
+  margin: 6px 0 0 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.dica-mod code {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: #eef0f3;
+}

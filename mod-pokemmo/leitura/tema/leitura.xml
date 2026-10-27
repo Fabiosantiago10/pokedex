@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Pokédex Online - Modo Leitura (extensão de tema)
+  Deixa os números da Caixa do PC e do Sumário maiores e com contorno, para o site ler os prints.
+  Só muda fonte e fundo (visual). Cada bloco repete as definições originais do jogo
+  (theme_history/default/ui/pc.xml e monster-frame.xml) e troca apenas o que está marcado com "MUDOU".
+-->
+<themes>
+
+  <!-- ===== Caixa do PC: painel da direita (Stats, IVs, EVs, Natureza...) ===== -->
+  <theme name="pc-frame" ref="pc-frame">
+    <theme name="preview-frame" ref="-defaults">
+      <param name="background"><image>label7.background</image></param>
+      <param name="border"><border>0,0,0,0</border></param>
+      <theme name="label" ref="label" allowWildcard="true">
+        <param name="border"><border>4</border></param>
+        <!-- MUDOU: números em negrito, maiores e com contorno -->
+        <param name="font"><font>noto-bold-large-white</font></param>
+      </theme>
+      <theme name="monster-name-label" ref="label" allowWildcard="true">
+        <param name="border"><border>0</border></param>
+        <param name="textAlignment"><enum type="alignment">center</enum></param>
+        <param name="font"><font>noto-bold-large-white</font></param>
+      </theme>
+      <theme name="label-title" ref="label" allowWildcard="true">
+        <param name="border"><border>6,5</border></param>
+        <!-- MUDOU: sem o botão azul atrás de "Stats:", "IVs:", "EVs:" -->
+        <param name=""><image>none</image></param>
+        <param name="font"><font>main-border</font></param>
+        <param name="textAlignment"><enum type="alignment">center</enum></param>
+      </theme>
+      <theme name="label-markup" ref="label" allowWildcard="true">
+        <param name="font"><font>main-markup</font></param>
+      </theme>
+      <theme name="label-hidden-ability" ref="label">
+        <param name="font"><font>main-yellow</font></param>
+      </theme>
+      <theme name="border-container" ref="label">
+        <param name="background"><image>pc-preview.default</image></param>
+        <param name="border"><border>0,0,0,0</border></param>
+      </theme>
+    </theme>
+  </theme>
+
+  <!-- ===== Sumário: valores (IV HP, Ataque, stats, natureza...) ===== -->
+  <theme name="label-monster-area" ref="label-monster-area">
+    <theme name="label-monster-value" ref="label" allowWildcard="true">
+      <param name="background"><image>mi-label-value</image></param>
+      <param name="textAlignment"><enum type="alignment">left</enum></param>
+      <param name="border"><border>2,6,2,6</border></param>
+      <param name="maxWidth"><int>110</int></param>
+      <param name="minWidth"><int>110</int></param>
+      <!-- MUDOU: negrito, maior e com contorno -->
+      <param name="font"><font>noto-bold-large-white</font></param>
+    </theme>
+    <!-- IV 31 (verde no jogo) e IV 0 (vermelho): ficam brancos e em negrito também, para o leitor não errar -->
+    <theme name="label-monster-value-stat-complete" ref="label" allowWildcard="true">
+      <param name="background"><image>mi-label-value</image></param>
+      <param name="textAlignment"><enum type="alignment">left</enum></param>
+      <param name="border"><border>4,5,5,25</border></param>
+      <param name="maxWidth"><int>110</int></param>
+      <param name="minWidth"><int>110</int></param>
+      <param name="font"><font>noto-bold-large-white</font></param>
+    </theme>
+    <theme name="label-monster-value-stat-bad" ref="label" allowWildcard="true">
+      <param name="background"><image>mi-label-value</image></param>
+      <param name="textAlignment"><enum type="alignment">left</enum></param>
+      <param name="border"><border>4,5,5,25</border></param>
+      <param name="maxWidth"><int>110</int></param>
+      <param name="minWidth"><int>110</int></param>
+      <param name="font"><font>noto-bold-large-white</font></param>
+    </theme>
+  </theme>
+
+</themes>
