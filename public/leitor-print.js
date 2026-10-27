@@ -17,7 +17,8 @@ function carregarOcr() {
 }
 
 // O Sumário tem texto claro em fundo escuro: aumenta, inverte e deixa só preto e branco (o OCR lê melhor)
-function prepararImagem(imagem) {
+// limiar: a partir de que claridade o pixel conta como texto (muda entre as leituras de nova tentativa)
+function prepararImagem(imagem, limiar = 140) {
   const escala = imagem.width < 1400 ? 2 : 1
   const canvas = document.createElement('canvas')
   canvas.width = imagem.width * escala
@@ -29,7 +30,7 @@ function prepararImagem(imagem) {
   const px = dados.data
   for (let i = 0; i < px.length; i += 4) {
     const luz = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]
-    const valor = luz > 140 ? 0 : 255  // texto claro vira preto; fundo escuro vira branco
+    const valor = luz > limiar ? 0 : 255  // texto claro vira preto; fundo escuro vira branco
     px[i] = px[i + 1] = px[i + 2] = valor
   }
   ctx.putImageData(dados, 0, 0)
@@ -102,6 +103,27 @@ function lerTexto(texto) {
       const natureza = NATUREZAS_TODAS.find(n => new RegExp('\\b' + n + '\\b', 'i').test(sem))
       if (natureza) lido.natureza = natureza
     }
+    // Caixa do PC: "Nv. 19 Tauros ♂" (nível + espécie) e "Habilidade: Anger Point"
+    if ((m = sem.match(/\bN[vy]\.?\s*[\dlIoOsS|]{1,3}\s+([A-Za-z][A-Za-z.'\- ]{1,20})/))) lido.nomeLido = m[1].trim()
+    if ((m = sem.match(/Habilidade\W*([A-Za-z][A-Za-z' -]{1,25})/i))) lido.habilidade = m[1].trim()
+
+    // Caixa do PC: "Stats: 58/48/41/23/35/45", "IVs: 4/29/3/5/23/26", "EVs: 0/0/0/0/0/0"
+    // Se o rótulo sair ilegível ("ms 4/29/3/5/23/26"), vale a ordem da tela: Stats, depois IVs, depois EVs
+    const lista = sem.match(/^(.*?)((?:[\dsSlIoO|]{1,3}\s*\/\s*){5}[\dsSlIoO|]{1,3})\s*$/)
+    if (lista && !/186/.test(lista[2])) {
+      const rotulo = lista[1].replace(/[^A-Za-z1|]/g, '')
+      const valores = lista[2].split('/').map(v => paraNumero(v.trim()))
+      const ordem = ['stats', 'ivs', 'evs']
+      let tipo = /^st/i.test(rotulo) ? 'stats' : /^E[VY]/i.test(rotulo) ? 'evs' : /^[I1l|][VY']/i.test(rotulo) ? 'ivs' : null
+      if (!tipo) tipo = ordem[Math.min(ordem.indexOf(lido.ultimaLista || 'stats') + (lido.ultimaLista ? 1 : 0), 2)]
+      const limite = tipo === 'ivs' ? 31 : tipo === 'evs' ? 252 : 999
+      if (valores.length === 6 && valores.every(v => v !== null && v <= limite)) {
+        ATRIBUTOS.forEach((a, i) => { lido[tipo][a] = valores[i] })
+      }
+      lido.ultimaLista = tipo
+      return
+    }
+
     // "Total: 134 / 186" da aba de IVs: serve para conferir se os 6 IVs foram lidos certo
     if (/^\W*Total\b/i.test(sem)) {
       const total = sem.match(/Total\W*([\dsSlIoO|]{1,3})\s*\/\s*186/i)
@@ -138,10 +160,16 @@ function ataquesNoTexto(texto) {
   const conhecidos = Object.values(ataquesAtuais)
   const achados = []
   texto.split(/\n+/).forEach(function(linha) {
-    const l = limpar(linha)
-    if (l.length < 3) return
-    const ataque = conhecidos.find(a => limpar(a.nome) === l)
-    if (ataque && !achados.includes(ataque.nome)) achados.push(ataque.nome)
+    // Na Caixa do PC o ataque vem com o tipo na frente ("dark Payback"): tenta com e sem a primeira palavra
+    const semTipo = linha.trim().replace(/^\S+\s+/, '')
+    for (const l of [limpar(linha), limpar(semTipo)]) {
+      if (l.length < 3) continue
+      const ataque = conhecidos.find(a => limpar(a.nome) === l)
+      if (ataque && !achados.includes(ataque.nome)) {
+        achados.push(ataque.nome)
+        break
+      }
+    }
   })
   return achados.slice(0, 4)
 }
@@ -155,20 +183,36 @@ async function lerPrints(arquivos) {
   try {
     await carregarOcr()
     const textos = []
+    const lido = { ivs: {}, evs: {}, stats: {}, repetido: false }
+    // Junta o que cada leitura achou; o que já foi lido não é trocado
+    const juntar = function(l) {
+      ;['ivs', 'evs', 'stats'].forEach(k => ATRIBUTOS.forEach(a => { if (lido[k][a] === undefined && l[k][a] !== undefined) lido[k][a] = l[k][a] }))
+      ;['numero', 'nivel', 'felicidade', 'natureza', 'totalIvs', 'nomeLido', 'habilidade'].forEach(k => { if (lido[k] === undefined && l[k] !== undefined) lido[k] = l[k] })
+      lido.repetido = lido.repetido || l.repetido
+    }
     for (let i = 0; i < lista.length; i++) {
       status.textContent = `Lendo o print ${i + 1} de ${lista.length}...`
       const imagem = await abrirImagem(lista[i])
-      const resultado = await Tesseract.recognize(prepararImagem(imagem), 'eng')
-      textos.push(resultado.data.text)
+      // Se a linha de IVs ou de stats saiu incompleta, lê de novo com outro contraste e completa
+      const doPrint = { ivs: {}, stats: {} }
+      for (const limiar of [140, 100, 180]) {
+        const resultado = await Tesseract.recognize(prepararImagem(imagem, limiar), 'eng')
+        textos.push(resultado.data.text)
+        const l = lerTexto(resultado.data.text)
+        juntar(l)
+        Object.assign(doPrint.ivs, l.ivs)
+        Object.assign(doPrint.stats, l.stats)
+        const ivsAchados = Object.keys(doPrint.ivs).length
+        const statsAchados = Object.keys(doPrint.stats).length
+        // Linha que parece a dos IVs da Caixa do PC ("I's: Af20/3/5/23/26") mas não deu 6 números: vale ler de novo
+        const linhaIvRuim = ivsAchados === 0 && /^\W*[I1l|][^\s:/]{0,3}\s*:.*\/.*\//m.test(resultado.data.text)
+        // Print que tem IVs ou stats: para quando estiverem completos; print sem nenhum (aba de informações): uma leitura basta
+        if (!linhaIvRuim && (ivsAchados === 0 || ivsAchados === 6) && (statsAchados === 0 || statsAchados === 6)) break
+        status.textContent = `Lendo o print ${i + 1} de ${lista.length} de novo, com outro contraste...`
+      }
     }
     const texto = textos.join('\n')
     window.ultimoTextoLido = texto  // para conferir o que o leitor entendeu (console do navegador)
-    const lido = { ivs: {}, evs: {}, stats: {}, repetido: false }
-    textos.map(lerTexto).forEach(function(l) {
-      ;['ivs', 'evs', 'stats'].forEach(k => Object.assign(lido[k], l[k]))
-      ;['numero', 'nivel', 'felicidade', 'natureza', 'totalIvs'].forEach(k => { if (l[k] !== undefined) lido[k] = l[k] })
-      lido.repetido = lido.repetido || l.repetido
-    })
 
     // Confere os IVs com o "Total" que o jogo mostra. Se faltou ler um só, o total diz qual é.
     let avisoTotal = ''
@@ -190,6 +234,27 @@ async function lerPrints(arquivos) {
         plataforma.dispatchEvent(new Event('change'))
       }
     }
+    // Sem número da Pokédex (Caixa do PC): acha a espécie pelo nome lido ("Nv. 19 Tauros")
+    if (!lido.numero && lido.nomeLido) {
+      const limpar = s => s.toLowerCase().replace(/[^a-z]/g, '')
+      const palavras = lido.nomeLido.split(/\s+/)
+      for (let n = palavras.length; n >= 1 && !lido.numero; n--) {
+        const candidato = limpar(palavras.slice(0, n).join(' '))
+        const indice = especies.findIndex(e => limpar(e) === candidato)
+        if (indice >= 0) lido.numero = indice + 1
+      }
+    }
+    // Ainda sem espécie (Sumário: o nome aparece no topo, "Magikarp ♀ Lv. 5"): procura um nome de espécie no texto
+    if (!lido.numero) {
+      const nomes = new Map(especies.map((e, i) => [e.toLowerCase().replace(/[^a-z]/g, ''), i + 1]))
+      for (const palavra of texto.split(/[^A-Za-z.'-]+/)) {
+        const chave = palavra.toLowerCase().replace(/[^a-z]/g, '')
+        if (chave.length >= 4 && nomes.has(chave)) {
+          lido.numero = nomes.get(chave)
+          break
+        }
+      }
+    }
     if (lido.numero && !idEdicao) {
       campoNumero.value = lido.numero
       campoNome.value = especies[lido.numero - 1] || String(lido.numero)
@@ -197,6 +262,7 @@ async function lerPrints(arquivos) {
     }
     preencherCampo('nivel', lido.nivel)
     preencherCampo('felicidade', lido.felicidade)
+    preencherCampo('habilidade', lido.habilidade)
     if (lido.natureza && !document.getElementById('natureza').disabled) {
       document.getElementById('natureza').value = lido.natureza
       document.getElementById('natureza').dispatchEvent(new Event('change', { bubbles: true }))
@@ -214,7 +280,8 @@ async function lerPrints(arquivos) {
 
     // Resumo do que foi lido (e do que faltou), para a pessoa conferir
     const partes = []
-    if (lido.numero) partes.push(`#${lido.numero}`)
+    if (lido.numero) partes.push(`#${lido.numero} ${campoNome.value}`)
+    if (lido.habilidade) partes.push(lido.habilidade)
     if (lido.nivel) partes.push(`Nv ${lido.nivel}`)
     if (lido.natureza) partes.push(lido.natureza)
     if (Object.keys(lido.ivs).length) partes.push(`IVs ${ATRIBUTOS.map(a => lido.ivs[a] ?? '?').join('/')}`)
@@ -222,7 +289,7 @@ async function lerPrints(arquivos) {
     if (Object.keys(lido.evs).length) partes.push(`EVs ${ATRIBUTOS.map(a => lido.evs[a] ?? '?').join('/')}`)
     if (ataques.length) partes.push(`ataques: ${ataques.join(', ')}`)
     const faltou = []
-    if (!lido.numero) faltou.push('número da Pokédex')
+    if (!lido.numero) faltou.push('espécie (número da Pokédex)')
     if (!lido.natureza) faltou.push('natureza')
     if (ATRIBUTOS.some(a => lido.ivs[a] === undefined)) faltou.push('IVs')
     if (ATRIBUTOS.some(a => lido.stats[a] === undefined)) faltou.push('stats')
