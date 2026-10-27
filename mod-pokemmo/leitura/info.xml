@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<resource name="Pokedex Online - Modo Leitura" version="1.1" description="Numeros maiores e com mais contraste na Caixa do PC e no Sumario, para o site Pokedex Online ler os prints. So muda o visual." author="SrFos" weblink="https://forums.pokemmo.eu/index.php?/topic/56125-pokemmo-mod-documentation/">
+<resource name="Pokedex Online - Modo Leitura" version="1.2" description="Numeros maiores e com mais contraste na Caixa do PC e no Sumario, para o site Pokedex Online ler os prints. So muda o visual." author="SrFos" weblink="https://forums.pokemmo.eu/index.php?/topic/56125-pokemmo-mod-documentation/">
   <theme_extensions theme_extension_revision="1">
     <theme_extension name="pokedex-online-leitura" path="tema/leitura.xml" is_mobile="false"/>
   </theme_extensions>

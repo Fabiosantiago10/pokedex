@@ -109,12 +109,14 @@ function lerTexto(texto) {
 
     // Caixa do PC: "Stats: 58/48/41/23/35/45", "IVs: 4/29/3/5/23/26", "EVs: 0/0/0/0/0/0"
     // Se o rótulo sair ilegível ("ms 4/29/3/5/23/26"), vale a ordem da tela: Stats, depois IVs, depois EVs
-    const lista = sem.match(/^(.*?)((?:[\dsSlIoO|]{1,3}\s*\/\s*){5}[\dsSlIoO|]{1,3})\s*$/)
+    // Num print da Caixa do PC inteira, a mesma linha pode trazer coisas da caixa ao lado ("...132/99 2 47%"):
+    // pega só os 6 números com "/" (o OCR às vezes lê a barra como "f")
+    const lista = sem.match(/^(.*?)((?:[\dsSlIoO|]{1,3}\s*[\/f]\s*){5}[\dsSlIoO|]{1,3})(?![\d\/])/)
     if (lista && !/186/.test(lista[2])) {
-      const rotulo = lista[1].replace(/[^A-Za-z1|]/g, '')
-      const valores = lista[2].split('/').map(v => paraNumero(v.trim()))
+      const rotulo = (lista[1].match(/[A-Za-z1|']+\W*$/) || [''])[0].replace(/[^A-Za-z1|']/g, '')
+      const valores = lista[2].split(/[\/f]/).map(v => paraNumero(v.trim()))
       const ordem = ['stats', 'ivs', 'evs']
-      let tipo = /^st/i.test(rotulo) ? 'stats' : /^E[VY]/i.test(rotulo) ? 'evs' : /^[I1l|][VY']/i.test(rotulo) ? 'ivs' : null
+      let tipo = /^st/i.test(rotulo) ? 'stats' : /^E[VY]/i.test(rotulo) ? 'evs' : /^[I1l|][VY'][s5]?$/i.test(rotulo) ? 'ivs' : null
       if (!tipo) tipo = ordem[Math.min(ordem.indexOf(lido.ultimaLista || 'stats') + (lido.ultimaLista ? 1 : 0), 2)]
       const limite = tipo === 'ivs' ? 31 : tipo === 'evs' ? 252 : 999
       if (valores.length === 6 && valores.every(v => v !== null && v <= limite)) {
@@ -160,16 +162,13 @@ function ataquesNoTexto(texto) {
   const conhecidos = Object.values(ataquesAtuais)
   const achados = []
   texto.split(/\n+/).forEach(function(linha) {
-    // Na Caixa do PC o ataque vem com o tipo na frente ("dark Payback"): tenta com e sem a primeira palavra
-    const semTipo = linha.trim().replace(/^\S+\s+/, '')
-    for (const l of [limpar(linha), limpar(semTipo)]) {
-      if (l.length < 3) continue
-      const ataque = conhecidos.find(a => limpar(a.nome) === l)
-      if (ataque && !achados.includes(ataque.nome)) {
-        achados.push(ataque.nome)
-        break
-      }
-    }
+    // Na Caixa do PC o ataque vem com o tipo na frente ("dark Payback") e, no print da caixa inteira,
+    // com texto da caixa ao lado ("=58 Hyper Beam = Clem"): procura o nome do ataque como palavra dentro da linha
+    const texto = ' ' + semAcento(linha).toLowerCase().replace(/[^a-z0-9-]+/g, ' ') + ' '
+    const ataque = conhecidos
+      .filter(a => a.nome.length >= 4 && texto.includes(' ' + semAcento(a.nome).toLowerCase().replace(/[^a-z0-9-]+/g, ' ') + ' '))
+      .sort((x, y) => y.nome.length - x.nome.length)[0]  // "Hyper Beam" antes de "Beam"
+    if (ataque && !achados.includes(ataque.nome)) achados.push(ataque.nome)
   })
   return achados.slice(0, 4)
 }
@@ -272,6 +271,29 @@ async function lerPrints(arquivos) {
       preencherCampo('iv' + SUFIXOS[a], lido.ivs[a])
       preencherCampo('ev' + SUFIXOS[a], lido.evs[a])
     })
+    // No PokeMMO a conta dos stats é exata: com IVs, EVs, natureza e nível dá para conferir cada stat lido.
+    // Se o número lido é o começo do certo (ex: "9" de "99", cortado na tela), corrige; se não bate, avisa.
+    let avisoStats = ''
+    const natureza = document.getElementById('natureza').value
+    if (baseAtual && lido.nivel && natureza && ATRIBUTOS.every(a => lido.ivs[a] !== undefined)) {
+      const evs = Object.fromEntries(ATRIBUTOS.map(a => [a, lido.evs[a] || 0]))
+      const esperado = calcularStats(baseAtual, lido.ivs, evs, natureza, lido.nivel)
+      const corrigidos = []
+      const diferentes = []
+      ATRIBUTOS.forEach(function(a) {
+        const valor = lido.stats[a]
+        if (valor === undefined || valor === esperado[a]) return
+        if (String(esperado[a]).startsWith(String(valor))) {
+          lido.stats[a] = esperado[a]
+          corrigidos.push(`${NOMES_ATRIBUTOS[a]} ${valor} → ${esperado[a]}`)
+        } else {
+          diferentes.push(`${NOMES_ATRIBUTOS[a]} (lido ${valor}, pela conta ${esperado[a]})`)
+        }
+      })
+      if (corrigidos.length) avisoStats += `Corrigido pela conta (o número estava cortado): ${corrigidos.join(', ')}. `
+      if (diferentes.length) avisoStats += `⚠️ Não bate com os IVs, EVs e natureza: ${diferentes.join(', ')}. Confira no jogo.`
+      ATRIBUTOS.forEach(a => preencherCampo(a, lido.stats[a]))
+    }
     const ataques = ataquesNoTexto(texto)
     ataques.forEach(adicionarAtaque)
     atualizarTotalEV()
@@ -298,6 +320,7 @@ async function lerPrints(arquivos) {
       ? `✔ Lido: ${escaparHtml(partes.join(' · '))}.` +
         (faltou.length ? `<br>Faltou: ${escaparHtml(faltou.join(', '))}. Envie o print dessa aba do Sumário ou digite.` : '') +
         (avisoTotal ? `<br><span class="aviso-total">${escaparHtml(avisoTotal)}</span>` : '') +
+        (avisoStats ? `<br><span class="${avisoStats.includes('⚠️') ? 'aviso-total' : ''}">${escaparHtml(avisoStats)}</span>` : '') +
         (lido.repetido ? '<br>⚠️ O print parece ter mais de um Pokémon: usei o primeiro. Confira os números.' : '') +
         '<br><strong>Confira tudo antes de salvar</strong> (o sexo e o apelido não são lidos).'
       : 'Não consegui ler nada. Use o print do Sumário do PokeMMO, com a janela inteira e sem cortar os números.'

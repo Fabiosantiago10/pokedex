@@ -13,8 +13,8 @@
 			<param name="border"><border>0,0,0,0</border></param>
 			<theme name="label" ref="label" allowWildcard="true">
 				<param name="border"><border>4</border></param>
-				<!-- MUDOU: numeros em negrito, maiores e com contorno -->
-				<param name="font"><font>noto-bold-large-white</font></param>
+				<!-- MUDOU: numeros com contorno escuro (tamanho normal, para a linha de Stats caber no painel) -->
+				<param name="font"><font>main-border</font></param>
 			</theme>
 			<theme name="monster-name-label" ref="label" allowWildcard="true">
 				<param name="border"><border>0</border></param>
