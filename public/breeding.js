@@ -120,9 +120,12 @@ async function atualizar() {
     .sort((x, y) => y.plano.pontos - x.plano.pontos)
 
   const grupos = (dadosEscolhido && dadosEscolhido.gruposOvo) || []
+  // O parceiro pode ser de outra espécie do mesmo grupo de ovo; o filhote é que precisa ser da linha do escolhido
+  const linha = (dadosEscolhido && dadosEscolhido.nasceComo) || escolhido.nome
+  document.getElementById('texto-so-mesma').textContent = `Só casais que geram um ${linha} (o parceiro pode ser de outra espécie do mesmo grupo de ovo, desde que o ${escolhido.nome} seja a fêmea)`
   resultado.innerHTML = `
     <p class="resumo-breeding">
-      Objetivo: <strong>${NOMES_FOCO[foco]}</strong> · Grupo de ovo: <strong>${grupos.join(', ') || '—'}</strong> ·
+      Objetivo: <strong>${NOMES_FOCO[foco]}</strong> · Cruza com quem é do grupo de ovo: <strong>${grupos.join(', ') || '—'}</strong> ·
       ${casais.length ? `${casais.length} parceiro(s) entre os seus Pokémon` : 'nenhum parceiro entre os seus Pokémon'}
     </p>
     ${grupos.includes('no-eggs') ? '<p class="casal-aviso">Esta espécie não bota ovo.</p>' : ''}
