@@ -105,7 +105,7 @@ function htmlLado(p, golpes, oponente, melhor) {
                ${textoEfetividade(g.efet)}
              </div>
              <div class="golpe-info">
-               ${g.categoria} · Poder ${g.poder} · Precisão ${g.precisao}%${g.stab ? ' · <span class="tag-stab">STAB 1,5×</span>' : ''}
+               ${g.categoria} · Poder ${g.poder} · Precisão ${g.precisao}%${g.stab ? ' · <span class="tag-stab">STAB 1,5×</span>' : ''}${g.climaMult && g.climaMult !== 1 ? ` · <span class="tag-clima ${g.climaMult > 1 ? 'mais' : 'menos'}">${CLIMAS[climaAtual].icone} ${String(g.climaMult).replace('.', ',')}×</span>` : ''}
              </div>
              <div class="golpe-dano">
                ${g.max > 0
@@ -129,7 +129,8 @@ async function atualizar() {
   if (!originalA || !originalB) return
 
   // Link da batalha (para mandar a um amigo), com o nível escolhido
-  const extra = nivelBatalha ? `&nv=${nivelBatalha}${document.getElementById('evoluir').checked ? '' : '&evo=0'}` : ''
+  const extra = (nivelBatalha ? `&nv=${nivelBatalha}${document.getElementById('evoluir').checked ? '' : '&evo=0'}` : '') +
+    (climaAtual ? `&clima=${climaAtual}` : '')
   history.replaceState(null, '', `?a=${encodeURIComponent(originalA.id)}&b=${encodeURIComponent(originalB.id)}${extra}`)
 
   statusEl.textContent = 'Calculando...'
@@ -187,8 +188,11 @@ async function atualizar() {
   else if (pct(sim.b) >= 60) veredito = `<strong>${nomeB}</strong> é o favorito.`
   else veredito = 'Batalha equilibrada: qualquer um pode ganhar.'
 
+  const c = CLIMAS[climaAtual]
+  const avisoClima = c ? `<div class="aviso-clima">${c.icone} <strong>${c.nome}</strong>: ${c.texto}.${[a, b].filter(p => danoDoClima(p)).map(p => ` ${escaparHtml(p.nome)} perde ${danoDoClima(p)} de HP por turno.`).join('')}</div>` : ''
   resultado.innerHTML = `
     ${avisoEntreJogos}
+    ${avisoClima}
     <div class="placar">
       <div class="placar-lado ${pct(sim.a) > pct(sim.b) ? 'vencedor' : ''}">
         <span class="placar-pct">${pct(sim.a)}%</span>
@@ -341,6 +345,18 @@ document.getElementById('nivel-outro').addEventListener('change', function() {
 })
 document.getElementById('evoluir').addEventListener('change', () => atualizar())
 
+// Clima da batalha
+function escolherClima(clima) {
+  definirClima(clima)
+  document.querySelectorAll('[data-clima]').forEach(c => c.classList.toggle('ativo', (climaAtual || '') === c.dataset.clima))
+}
+document.getElementById('chips-clima').addEventListener('click', function(evento) {
+  const chip = evento.target.closest('[data-clima]')
+  if (!chip) return
+  escolherClima(chip.dataset.clima)
+  atualizar()
+})
+
 async function iniciar() {
   try {
     todosPokemons = await (await fetch('/api/pokemons')).json()
@@ -364,6 +380,8 @@ async function iniciar() {
   const pokemonB = todosPokemons.find(p => p.id === params.get('b'))
   if (pokemonA) plataformaAtual = plataformaDe(pokemonA)
   if (pokemonA && pokemonB && plataformaDe(pokemonA) !== plataformaDe(pokemonB)) plataformaAtual = ENTRE_JOGOS
+  // Link com clima (batalha.html?...&clima=chuva)
+  if (params.get('clima')) escolherClima(params.get('clima'))
   // Link com nível (batalha.html?...&nv=100&evo=0)
   if (params.get('evo') === '0') document.getElementById('evoluir').checked = false
   const nivelLink = parseInt(params.get('nv'), 10)

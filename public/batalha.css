@@ -559,3 +559,24 @@
   font-weight: 600;
   color: #5a3fb3 !important;
 }
+
+/* ---------- Clima ---------- */
+.aviso-clima {
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #eef6ff;
+  border: 1px solid #b9d6f5;
+  font-size: 14px;
+}
+
+.tag-clima {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tag-clima.mais { background: #e3f6e8; color: #1a8f3c; }
+.tag-clima.menos { background: #fde8e8; color: #b00000; }

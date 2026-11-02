@@ -5,6 +5,37 @@ function tiposDe(p) {
   return [p.tipo1, p.tipo2].filter(Boolean)
 }
 
+// ---------- Clima (regras do PokeMMO) ----------
+// Sol e chuva mudam o dano de Fogo e Água; areia e granizo tiram 1/16 do HP por turno;
+// areia dá Def. Esp 1,5× aos de Pedra e neve dá Defesa 1,5× aos de Gelo.
+const CLIMAS = {
+  sol: { nome: 'Sol', icone: '☀️', mais: 'Fire', menos: 'Water', texto: 'ataques de Fogo 1,5×, de Água 0,5×' },
+  chuva: { nome: 'Chuva', icone: '🌧️', mais: 'Water', menos: 'Fire', texto: 'ataques de Água 1,5×, de Fogo 0,5×' },
+  areia: { nome: 'Tempestade de areia', icone: '🌪️', imunes: ['Rock', 'Ground', 'Steel'], defEspTipo: 'Rock',
+    texto: 'tira 1/16 do HP por turno de quem não é Pedra, Terra ou Aço; Pedra ganha Def. Esp 1,5×' },
+  granizo: { nome: 'Granizo', icone: '🧊', imunes: ['Ice'], texto: 'tira 1/16 do HP por turno de quem não é Gelo' },
+  neve: { nome: 'Neve', icone: '❄️', defesaTipo: 'Ice', texto: 'Pokémon de Gelo ganham Defesa 1,5×' }
+}
+let climaAtual = null
+
+function definirClima(clima) {
+  climaAtual = CLIMAS[clima] ? clima : null
+}
+
+// Quanto o clima multiplica um ataque deste tipo (1 = nada muda)
+function multiplicadorDoClima(tipo) {
+  const c = CLIMAS[climaAtual]
+  if (!c) return 1
+  return tipo === c.mais ? 1.5 : tipo === c.menos ? 0.5 : 1
+}
+
+// Dano do clima no fim de cada turno (areia e granizo): 1/16 do HP máximo
+function danoDoClima(p) {
+  const c = CLIMAS[climaAtual]
+  if (!c || !c.imunes || tiposDe(p).some(t => c.imunes.includes(t))) return 0
+  return Math.max(1, Math.floor(p.stats.hp / 16))
+}
+
 // ---------- Fórmula de dano ----------
 function danoBase(nivel, poder, ataque, defesa) {
   return Math.floor(Math.floor(Math.floor(2 * nivel / 5 + 2) * poder * ataque / Math.max(defesa, 1)) / 50) + 2
@@ -38,16 +69,22 @@ function analisarGolpes(atacante, dadosAtacante, defensor, statsAtacante = ataca
     }
     const fisico = oficial.categoria === 'Físico'
     const ataque = fisico ? statsAtacante.ataque : statsAtacante.atqEsp
-    const defesa = fisico ? defensor.stats.defesa : defensor.stats.defEsp
+    let defesa = fisico ? defensor.stats.defesa : defensor.stats.defEsp
+    // Areia: Pedra com Def. Esp 1,5×. Neve: Gelo com Defesa 1,5×
+    const c = CLIMAS[climaAtual]
+    if (c && !fisico && c.defEspTipo && tiposDe(defensor).includes(c.defEspTipo)) defesa = Math.floor(defesa * 1.5)
+    if (c && fisico && c.defesaTipo && tiposDe(defensor).includes(c.defesaTipo)) defesa = Math.floor(defesa * 1.5)
     const stab = tiposDe(atacante).includes(oficial.tipo)
     const efet = efetividade(oficial.tipo, tiposDe(defensor))
-    const base = danoBase(atacante.nivel, oficial.poder, ataque, defesa)
+    // O clima entra logo depois do dano base, antes do crítico (ordem do jogo)
+    const climaMult = multiplicadorDoClima(oficial.tipo)
+    const base = Math.floor(danoBase(atacante.nivel, oficial.poder, ataque, defesa) * climaMult)
     const min = aplicarModificadores(base, false, 85, stab, efet)
     const max = aplicarModificadores(base, false, 100, stab, efet)
     const precisao = oficial.precisao ?? 100
     return {
       nome: oficial.nome, tipo: oficial.tipo, categoria: oficial.categoria, poder: oficial.poder,
-      precisao, stab, efet, base, min, max, statUsado: fisico ? 'ataque' : 'atqEsp',
+      precisao, stab, efet, base, min, max, climaMult, statUsado: fisico ? 'ataque' : 'atqEsp',
       media: (min + max) / 2 * precisao / 100
     }
   })
@@ -68,7 +105,9 @@ function rolarDano(golpe) {
 
 function simular(a, golpeA, b, golpeB) {
   const resultado = { a: 0, b: 0, empate: 0, turnos: 0 }
-  if (!golpeA && !golpeB) {
+  const climaA = danoDoClima(a)
+  const climaB = danoDoClima(b)
+  if (!golpeA && !golpeB && !climaA && !climaB) {
     resultado.empate = SIMULACOES
     return resultado
   }
@@ -90,6 +129,14 @@ function simular(a, golpeA, b, golpeB) {
           hpA -= rolarDano(golpeB)
           if (hpA <= 0) { vencedor = 'b'; break }
         }
+      }
+      // Fim do turno: areia ou granizo tiram HP de quem não é imune
+      if (!vencedor && (climaA || climaB)) {
+        hpA -= climaA
+        hpB -= climaB
+        if (hpA <= 0 && hpB <= 0) vencedor = 'empate'
+        else if (hpB <= 0) vencedor = 'a'
+        else if (hpA <= 0) vencedor = 'b'
       }
     }
     resultado[vencedor || 'empate']++
