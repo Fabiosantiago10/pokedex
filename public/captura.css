@@ -1,0 +1,130 @@
+.escolha-captura {
+  grid-template-columns: 1fr 2fr;
+}
+
+.campo-alvo {
+  display: flex;
+  gap: 6px;
+}
+
+.campo-alvo input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px;
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.botao-limpar {
+  padding: 0 14px;
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+#resultado {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.grade-capturadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.capturador {
+  padding: 12px;
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  background: white;
+}
+
+.melhor-capturador {
+  border-color: #1a8f3c;
+  background: #f3fbf5;
+}
+
+.capturador-topo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.capturador-topo small {
+  display: block;
+  color: var(--texto-suave);
+  font-size: 12px;
+}
+
+.capturador-posicao {
+  font-weight: 800;
+  font-size: 18px;
+  color: #1a8f3c;
+}
+
+.capturador-imagem {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.capturador-golpes {
+  margin: 8px 0 0 0;
+  padding-left: 4px;
+  list-style: none;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sit {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sit-2 { background: #e3f6e8; color: #1a8f3c; }
+.sit-1 { background: #fff4d6; color: #8a6200; }
+.sit-0 { background: #eee; color: #666; }
+
+.capturador-aviso {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  color: #b00000;
+}
+
+.dicas-alvo,
+.bolas,
+.sugestoes {
+  margin: 0 0 10px 0;
+  padding-left: 20px;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.titulo-bolas {
+  margin: 14px 0 6px 0;
+}
+
+.explica-pequena {
+  font-size: 13px;
+  color: var(--texto-suave);
+  margin: 0 0 10px 0;
+}
+
+@media (max-width: 640px) {
+  .escolha-captura {
+    grid-template-columns: 1fr;
+  }
+}

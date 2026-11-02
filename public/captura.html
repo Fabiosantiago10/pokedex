@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Captura</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="batalha.css">
+  <link rel="stylesheet" href="breeding.css">
+  <link rel="stylesheet" href="captura.css">
+</head>
+
+<body>
+
+  <header class="topo">
+    <div class="topo-conteudo">
+      <a href="index.html" class="marca"><span class="pokebola"></span> Minha Pokédex</a>
+      <nav>
+        <a href="index.html">Pokédex</a>
+        <a href="batalha.html">Batalha</a>
+        <a href="meus.html" class="ativo">Meus Pokémon</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="secao-pagina">
+    <div class="abas-treinador">
+      <span class="logado-como">Treinador: <strong id="nick-logado"></strong></span>
+      <div class="abas-botoes">
+        <a href="meus.html" class="aba">📋 Meus Pokémon cadastrados</a>
+        <a href="cadastro.html" class="aba">➕ Cadastrar Pokémon</a>
+        <a href="dicas.html" class="aba">💡 Dicas e builds</a>
+        <a href="breeding.html" class="aba">🥚 Breeding</a>
+        <a href="captura.html" class="aba ativa">🎯 Captura</a>
+        <button type="button" class="aba aba-sair" id="sair">Sair</button>
+      </div>
+    </div>
+
+    <h2 class="titulo-secao">🎯 Captura</h2>
+    <p class="intro">
+      O site olha os golpes e a habilidade dos <strong>seus</strong> Pokémon e mostra quais ajudam a capturar:
+      deixar o alvo com 1 de HP, pôr para dormir ou paralisar. Escolha o Pokémon que você quer pegar
+      para ver qual dos seus usar e qual bola jogar.
+    </p>
+
+    <div class="escolha-breeding escolha-captura">
+      <label class="campo-foco">Jogo
+        <select id="jogo"></select>
+      </label>
+      <label class="campo-foco">Quero capturar (opcional)
+        <span class="campo-alvo">
+          <input id="alvo" list="lista-especies" placeholder="Ex: Gengar, Dratini, Snorlax..." autocomplete="off">
+          <button type="button" id="limpar-alvo" class="botao-limpar" title="Limpar">✕</button>
+        </span>
+        <datalist id="lista-especies"></datalist>
+      </label>
+    </div>
+    <p id="status" class="status"></p>
+    <div id="resultado"></div>
+
+    <details class="explicacao">
+      <summary>Como capturar mais fácil?</summary>
+      <ul>
+        <li><strong>Pouco HP:</strong> quanto menos HP o alvo tem, maior a chance. O <strong>False Swipe</strong> deixa com 1 de HP e nunca derruba.</li>
+        <li><strong>Sono:</strong> o alvo dormindo dá a maior chance. A paralisia ajuda também, um pouco menos.</li>
+        <li><strong>Bola certa:</strong> Quick Ball no 1º turno, Dusk Ball à noite ou em caverna, Net Ball em Água e Inseto, Timer Ball em lutas longas.</li>
+        <li><strong>Synchronize:</strong> com ele no 1º lugar do time (pode estar desmaiado), o selvagem tem 20% de chance de vir com a mesma natureza.</li>
+        <li><strong>Compound Eyes</strong> aumenta a precisão em 30%: Sleep Powder vai de 75% para 97%.</li>
+        <li>A precisão dos golpes é a da 5ª geração, a mesma do PokeMMO. A lista de quem aprende cada golpe junta todos os jogos oficiais, então um ou outro caso pode ser diferente no PokeMMO.</li>
+      </ul>
+    </details>
+  </section>
+
+  <script src="comum.js"></script>
+  <script src="captura.js"></script>
+
+</body>
+
+</html>

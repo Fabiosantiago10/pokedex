@@ -86,6 +86,9 @@ async function emParalelo(itens, limite, tarefa) {
 }
 
 // Resume como o Pokémon aprende o ataque, juntando todos os jogos
+// Jogos da 5ª geração: os golpes e TMs do PokeMMO seguem eles (a lista geral junta todos os jogos)
+const JOGOS_GERACAO_5 = ['black-white', 'black-2-white-2']
+
 function metodosDeAprendizado(detalhes) {
   const metodos = new Set()
   let menorNivel = null
@@ -117,7 +120,7 @@ async function dadosDoPokemon(nome) {
   const slug = paraSlug(nome)
   // Entradas antigas do cache não têm os stats base, os EVs que rende ou o poder dos ataques: busca de novo
   const salvo = cache.pokemons[slug]
-  if (salvo && salvo.base && salvo.rendeEvs && salvo.basesAntigas && salvo.evolucoes && salvo.gruposOvo && (salvo.ataques.length === 0 || 'categoria' in salvo.ataques[0])) return salvo
+  if (salvo && salvo.base && salvo.rendeEvs && salvo.basesAntigas && salvo.evolucoes && salvo.gruposOvo && (salvo.ataques.length === 0 || 'metodos5' in salvo.ataques[0])) return salvo
 
   // A espécie diz qual é a forma padrão (ex: "deoxys" -> "deoxys-normal")
   const especie = await buscarJson(`${API}/pokemon-species/${slug}`)
@@ -135,12 +138,16 @@ async function dadosDoPokemon(nome) {
   })
 
   const aprendidos = pokemon.moves
-    .map(m => ({ slug: m.move.name, metodos: metodosDeAprendizado(m.version_group_details) }))
+    .map(m => ({
+      slug: m.move.name,
+      metodos: metodosDeAprendizado(m.version_group_details),
+      metodos5: metodosDeAprendizado(m.version_group_details.filter(d => JOGOS_GERACAO_5.includes(d.version_group.name)))
+    }))
     .filter(m => m.metodos.length > 0)
 
   const ataques = await emParalelo(aprendidos, 10, async function(m) {
     const detalhe = await detalheAtaque(m.slug)
-    return detalhe && { ...detalhe, metodos: m.metodos }
+    return detalhe && { ...detalhe, metodos: m.metodos, metodos5: m.metodos5 }
   })
 
   const resultado = {
