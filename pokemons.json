@@ -1,0 +1,114 @@
+[
+  {
+    "numero": "018",
+    "nome": "Pidgeot",
+    "natureza": "Jolly",
+    "tipo1": "Normal",
+    "tipo2": "Flying",
+    "habilidade": "Keen Eye",
+    "exp": 751719,
+    "proxNivel": 10441,
+    "stats": {
+      "hp": 258,
+      "hpMax": 258,
+      "felicidade": 100,
+      "ataque": 191,
+      "defesa": 154,
+      "atqEsp": 142,
+      "defEsp": 150,
+      "velocidade": 262
+    },
+    "evs": {
+      "hp": 54,
+      "ataque": 102,
+      "defesa": 53,
+      "atqEsp": 66,
+      "defEsp": 41,
+      "velocidade": 194,
+      "total": 510
+    },
+    "ivs": {
+      "hp": 31,
+      "ataque": 24,
+      "defesa": 5,
+      "atqEsp": 5,
+      "defEsp": 16,
+      "velocidade": 14,
+      "total": 95
+    },
+    "movimentos": [
+      {
+        "nome": "Fly",
+        "tipo": "Flying"
+      },
+      {
+        "nome": "Hurricane",
+        "tipo": "Flying"
+      },
+      {
+        "nome": "Gust",
+        "tipo": "Flying"
+      },
+      {
+        "nome": "Quick Attack",
+        "tipo": "Normal"
+      }
+    ]
+  },
+  {
+    "numero": "025",
+    "nome": "Pikachu",
+    "natureza": "Hasty",
+    "tipo1": "Electric",
+    "tipo2": null,
+    "habilidade": "Static",
+    "exp": 120000,
+    "proxNivel": 5000,
+    "stats": {
+      "hp": 35,
+      "hpMax": 35,
+      "felicidade": 80,
+      "ataque": 55,
+      "defesa": 40,
+      "atqEsp": 50,
+      "defEsp": 50,
+      "velocidade": 90
+    },
+    "evs": {
+      "hp": 0,
+      "ataque": 0,
+      "defesa": 0,
+      "atqEsp": 0,
+      "defEsp": 0,
+      "velocidade": 0,
+      "total": 0
+    },
+    "ivs": {
+      "hp": 20,
+      "ataque": 18,
+      "defesa": 12,
+      "atqEsp": 25,
+      "defEsp": 10,
+      "velocidade": 30,
+      "total": 115
+    },
+    "movimentos": [
+      {
+        "nome": "Thunderbolt",
+        "tipo": "Electric"
+      },
+      {
+        "nome": "Quick Attack",
+        "tipo": "Normal"
+      },
+      {
+        "nome": "Iron Tail",
+        "tipo": "Steel"
+      },
+      {
+        "nome": "Volt Tackle",
+        "tipo": "Electric"
+      }
+    ]
+  }
+]

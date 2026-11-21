@@ -1,0 +1,24 @@
+{
+  "name": "pokedex-agente",
+  "version": "1.0.0",
+  "description": "Agente que assiste você jogando PokeMMO e cadastra/avalia cada Pokémon na Minha Pokédex",
+  "type": "module",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "telas": "node src/index.js --listar-telas",
+    "testar": "node src/testar.js",
+    "time": "node src/time.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.12.0",
+    "dotenv": "^16.4.5",
+    "node-notifier": "^12.1.0",
+    "screenshot-desktop": "^1.15.8",
+    "sharp": "^0.35.5"
+  }
+}
