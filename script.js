@@ -1,94 +1,5 @@
-// Lista de Pokémons — cada {} é um Pokémon com todos os seus dados
-const pokemons = [
-  {
-    numero: "018",
-    nome: "Pidgeot",
-    natureza: "Jolly",
-    tipo1: "Normal",
-    tipo2: "Flying",
-    habilidade: "Keen Eye",
-    exp: 751719,
-    proxNivel: 10441,
-    stats: {
-      hp: 258,
-      hpMax: 258,
-      felicidade: 100,
-      ataque: 191,
-      defesa: 154,
-      atqEsp: 142,
-      defEsp: 150,
-      velocidade: 262
-    },
-    evs: {
-      hp: 54,
-      ataque: 102,
-      defesa: 53,
-      atqEsp: 66,
-      defEsp: 41,
-      velocidade: 194,
-      total: 510
-    },
-    ivs: {
-      hp: 31,
-      ataque: 24,
-      defesa: 5,
-      atqEsp: 5,
-      defEsp: 16,
-      velocidade: 14,
-      total: 95
-    },
-    movimentos: [
-      { nome: "Fly", tipo: "Flying" },
-      { nome: "Hurricane", tipo: "Flying" },
-      { nome: "Gust", tipo: "Flying" },
-      { nome: "Quick Attack", tipo: "Normal" }
-    ]
-  },
-  {
-    numero: "025",
-    nome: "Pikachu",
-    natureza: "Hasty",
-    tipo1: "Electric",
-    tipo2: null,
-    habilidade: "Static",
-    exp: 120000,
-    proxNivel: 5000,
-    stats: {
-      hp: 35,
-      hpMax: 35,
-      felicidade: 80,
-      ataque: 55,
-      defesa: 40,
-      atqEsp: 50,
-      defEsp: 50,
-      velocidade: 90
-    },
-    evs: {
-      hp: 0,
-      ataque: 0,
-      defesa: 0,
-      atqEsp: 0,
-      defEsp: 0,
-      velocidade: 0,
-      total: 0
-    },
-    ivs: {
-      hp: 20,
-      ataque: 18,
-      defesa: 12,
-      atqEsp: 25,
-      defEsp: 10,
-      velocidade: 30,
-      total: 115
-    },
-    movimentos: [
-      { nome: "Thunderbolt", tipo: "Electric" },
-      { nome: "Quick Attack", tipo: "Normal" },
-      { nome: "Iron Tail", tipo: "Steel" },
-      { nome: "Volt Tackle", tipo: "Electric" }
-    ]
-  }
-]
+// Lista de Pokémons — carregada do arquivo pokemons.json (o agente adiciona os novos lá)
+let pokemons = []
 
 // Cores por tipo
 const coresTipo = {
@@ -112,6 +23,33 @@ const coresTipo = {
   Ghost: "#705898"
 }
 
+// Mostra um traço quando o agente não conseguiu ler o valor
+function v(x) {
+  return x === null || x === undefined ? '–' : esc(x)
+}
+
+// Escapa texto vindo da base (lido de prints pelo agente)
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+}
+
+// Bloco com a avaliação feita pelo agente
+function blocoAvaliacao(a) {
+  if (!a) return ''
+  const evs = a.evsSugeridos ? Object.entries(a.evsSugeridos).filter(([, v]) => v > 0).map(([k, v]) => `${v} ${esc(k)}`).join(' / ') : ''
+  return `
+      <div class="secao">
+        <h3>Avaliação <span class="total-badge">${esc(a.nota)}/10</span></h3>
+        <p>${esc(a.resumo)}</p>
+        ${a.comparacao ? `<p><b>Na base:</b> ${esc(a.comparacao)}</p>` : ''}
+        ${a.naturezaIdeal ? `<p><b>Natureza ideal:</b> ${esc(a.naturezaIdeal)}</p>` : ''}
+        ${evs ? `<p><b>EVs:</b> ${evs}</p>` : ''}
+        ${a.golpesSugeridos?.length ? `<p><b>Golpes:</b> ${a.golpesSugeridos.map(esc).join(', ')}</p>` : ''}
+        ${a.item ? `<p><b>Item:</b> ${esc(a.item)}</p>` : ''}
+        ${a.melhorar?.length ? `<p><b>Melhorar:</b> ${a.melhorar.map(esc).join('; ')}</p>` : ''}
+      </div>`
+}
+
 // Gera o badge de tipo
 function badgeTipo(tipo) {
   const cor = coresTipo[tipo] || "#888"
@@ -130,17 +68,17 @@ function renderizarCards(lista) {
 
     card.innerHTML = `
       <span class="numero">#${pokemon.numero}</span>
-      <h2>${pokemon.nome}</h2>
+      <h2>${esc(pokemon.nome)}</h2>
       <div style="display:flex; gap:6px; margin-bottom:10px;">
         ${badgeTipo(pokemon.tipo1)}
         ${pokemon.tipo2 ? badgeTipo(pokemon.tipo2) : ''}
       </div>
       <div class="stats">
-        <span>HP: ${pokemon.stats.hp}</span>
-        <span>Ataque: ${pokemon.stats.ataque}</span>
-        <span>Velocidade: ${pokemon.stats.velocidade}</span>
+        <span>HP: ${v(pokemon.stats.hp)}</span>
+        <span>Ataque: ${v(pokemon.stats.ataque)}</span>
+        <span>Velocidade: ${v(pokemon.stats.velocidade)}</span>
       </div>
-      <div class="iv-total">IVs: ${pokemon.ivs.total}/186</div>
+      <div class="iv-total">IVs: ${v(pokemon.ivs.total)}/186${pokemon.avaliacao ? ` · Nota ${esc(pokemon.avaliacao.nota)}/10` : ''}</div>
     `
 
     // Ao clicar abre o detalhe
@@ -156,15 +94,16 @@ function renderizarCards(lista) {
 function abrirDetalhe(pokemon) {
   document.getElementById('detalhe').style.display = 'flex'
   document.getElementById('detalhe-conteudo').innerHTML = `
+    <button onclick="fecharDetalhe()" style="float:right; border:none; background:none; font-size:20px; cursor:pointer;">✕</button>
     <div class="detalhe-header">
       <span class="numero">#${pokemon.numero}</span>
-      <h2>${pokemon.nome}</h2>
+      <h2>${esc(pokemon.nome)}</h2>
       <div style="display:flex; gap:6px; margin:6px 0;">
         ${badgeTipo(pokemon.tipo1)}
         ${pokemon.tipo2 ? badgeTipo(pokemon.tipo2) : ''}
       </div>
-      <p>Natureza: ${pokemon.natureza} | Habilidade: ${pokemon.habilidade}</p>
-      <p>EXP: ${pokemon.exp.toLocaleString()} | Próx. nível: ${pokemon.proxNivel.toLocaleString()}</p>
+      <p>Natureza: ${esc(pokemon.natureza)} | Habilidade: ${esc(pokemon.habilidade)}</p>
+      <p>${pokemon.nivel ? `Nível: ${esc(pokemon.nivel)} | ` : ''}EXP: ${(pokemon.exp ?? 0).toLocaleString()} | Próx. nível: ${(pokemon.proxNivel ?? 0).toLocaleString()}</p>
     </div>
 
     <div class="detalhe-secoes">
@@ -172,37 +111,37 @@ function abrirDetalhe(pokemon) {
       <div class="secao">
         <h3>Stats</h3>
         <table>
-          <tr><td>HP</td><td>${pokemon.stats.hp} / ${pokemon.stats.hpMax}</td></tr>
-          <tr><td>Felicidade</td><td>${pokemon.stats.felicidade}%</td></tr>
-          <tr><td>Ataque</td><td>${pokemon.stats.ataque}</td></tr>
-          <tr><td>Defesa</td><td>${pokemon.stats.defesa}</td></tr>
-          <tr><td>Atq. Esp</td><td>${pokemon.stats.atqEsp}</td></tr>
-          <tr><td>Def. Esp</td><td>${pokemon.stats.defEsp}</td></tr>
-          <tr><td>Velocidade</td><td>${pokemon.stats.velocidade}</td></tr>
+          <tr><td>HP</td><td>${v(pokemon.stats.hp)} / ${v(pokemon.stats.hpMax)}</td></tr>
+          <tr><td>Felicidade</td><td>${v(pokemon.stats.felicidade)}%</td></tr>
+          <tr><td>Ataque</td><td>${v(pokemon.stats.ataque)}</td></tr>
+          <tr><td>Defesa</td><td>${v(pokemon.stats.defesa)}</td></tr>
+          <tr><td>Atq. Esp</td><td>${v(pokemon.stats.atqEsp)}</td></tr>
+          <tr><td>Def. Esp</td><td>${v(pokemon.stats.defEsp)}</td></tr>
+          <tr><td>Velocidade</td><td>${v(pokemon.stats.velocidade)}</td></tr>
         </table>
       </div>
 
       <div class="secao">
-        <h3>EVs <span class="total-badge">${pokemon.evs.total}/510</span></h3>
+        <h3>EVs <span class="total-badge">${v(pokemon.evs.total)}/510</span></h3>
         <table>
-          <tr><td>HP</td><td>${pokemon.evs.hp}</td></tr>
-          <tr><td>Ataque</td><td>${pokemon.evs.ataque}</td></tr>
-          <tr><td>Defesa</td><td>${pokemon.evs.defesa}</td></tr>
-          <tr><td>Atq. Esp</td><td>${pokemon.evs.atqEsp}</td></tr>
-          <tr><td>Def. Esp</td><td>${pokemon.evs.defEsp}</td></tr>
-          <tr><td>Velocidade</td><td>${pokemon.evs.velocidade}</td></tr>
+          <tr><td>HP</td><td>${v(pokemon.evs.hp)}</td></tr>
+          <tr><td>Ataque</td><td>${v(pokemon.evs.ataque)}</td></tr>
+          <tr><td>Defesa</td><td>${v(pokemon.evs.defesa)}</td></tr>
+          <tr><td>Atq. Esp</td><td>${v(pokemon.evs.atqEsp)}</td></tr>
+          <tr><td>Def. Esp</td><td>${v(pokemon.evs.defEsp)}</td></tr>
+          <tr><td>Velocidade</td><td>${v(pokemon.evs.velocidade)}</td></tr>
         </table>
       </div>
 
       <div class="secao">
-        <h3>IVs <span class="total-badge">${pokemon.ivs.total}/186</span></h3>
+        <h3>IVs <span class="total-badge">${v(pokemon.ivs.total)}/186</span></h3>
         <table>
-          <tr><td>HP</td><td>${pokemon.ivs.hp}</td></tr>
-          <tr><td>Ataque</td><td>${pokemon.ivs.ataque}</td></tr>
-          <tr><td>Defesa</td><td>${pokemon.ivs.defesa}</td></tr>
-          <tr><td>Atq. Esp</td><td>${pokemon.ivs.atqEsp}</td></tr>
-          <tr><td>Def. Esp</td><td>${pokemon.ivs.defEsp}</td></tr>
-          <tr><td>Velocidade</td><td>${pokemon.ivs.velocidade}</td></tr>
+          <tr><td>HP</td><td>${v(pokemon.ivs.hp)}</td></tr>
+          <tr><td>Ataque</td><td>${v(pokemon.ivs.ataque)}</td></tr>
+          <tr><td>Defesa</td><td>${v(pokemon.ivs.defesa)}</td></tr>
+          <tr><td>Atq. Esp</td><td>${v(pokemon.ivs.atqEsp)}</td></tr>
+          <tr><td>Def. Esp</td><td>${v(pokemon.ivs.defEsp)}</td></tr>
+          <tr><td>Velocidade</td><td>${v(pokemon.ivs.velocidade)}</td></tr>
         </table>
       </div>
 
@@ -210,12 +149,12 @@ function abrirDetalhe(pokemon) {
         <h3>Movimentos</h3>
         ${pokemon.movimentos.map(m => `
           <div class="movimento">
-            <span>${m.nome}</span>
+            <span>${esc(m.nome)}</span>
             ${badgeTipo(m.tipo)}
           </div>
         `).join('')}
       </div>
-
+${blocoAvaliacao(pokemon.avaliacao)}
     </div>
   `
 }
@@ -234,5 +173,19 @@ document.getElementById('busca').addEventListener('input', function() {
   renderizarCards(filtrados)
 })
 
-// Renderiza todos ao carregar
-renderizarCards(pokemons)
+// Filtro por tipo (botões do topo)
+function filtrar(tipo) {
+  if (tipo === 'todos') return renderizarCards(pokemons)
+  renderizarCards(pokemons.filter(p => p.tipo1 === tipo || p.tipo2 === tipo))
+}
+
+// Carrega a base do pokemons.json e renderiza
+fetch('pokemons.json', { cache: 'no-store' })
+  .then(r => r.json())
+  .then(dados => {
+    pokemons = dados
+    renderizarCards(pokemons)
+  })
+  .catch(() => {
+    document.getElementById('lista').innerHTML = '<p>Não foi possível carregar pokemons.json</p>'
+  })
